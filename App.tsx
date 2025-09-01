@@ -208,7 +208,6 @@ const App: React.FC = () => {
 
     const handleLogout = async () => {
         await apiClient.auth.signOut();
-        window.location.reload();
     };
 
     const handleSetViewingUser = (userId: string) => {
