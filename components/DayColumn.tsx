@@ -51,12 +51,12 @@ export const DayColumn: React.FC<DayColumnProps> = ({ day, tasks, onAddTask, onU
                         value={newTaskText}
                         onChange={(e) => setNewTaskText(e.target.value)}
                         onKeyDown={handleKeyDown}
-                        placeholder="Add a new task..."
-                        className="flex-grow bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Add task..."
+                        className="min-w-0 flex-grow bg-slate-700 border border-slate-600 rounded-lg px-2 py-1.5 text-sm text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                     <button
                         onClick={handleAddTask}
-                        className="bg-blue-600 hover:bg-blue-700 text-white font-bold p-1 rounded-lg flex items-center justify-center transition-colors shrink-0"
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-bold p-1.5 rounded-lg flex items-center justify-center transition-colors shrink-0"
                         aria-label="Add task"
                     >
                         <PlusIcon className="h-4 w-4" />
