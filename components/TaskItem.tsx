@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Task, TaskStatus } from '../types';
 import { TrashIcon, StarIcon } from './icons';
@@ -94,11 +95,11 @@ export const TaskItem: React.FC<TaskItemProps> = ({ task, onUpdateTask, onDelete
                         value={task.status}
                         onChange={handleStatusChange}
                         disabled={!canEdit}
-                        className={`rounded px-1 py-px text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-slate-500 transition-colors ${statusStyles[task.status].select} ${disabledClass}`}
+                        className={`rounded px-1 py-px text-xs font-medium focus:outline-none focus:ring-1 focus:ring-slate-500 transition-colors ${statusStyles[task.status].select} ${disabledClass}`}
                         aria-label="Task status"
                     >
                         {Object.values(TaskStatus).map(status => (
-                            <option key={status} value={status} className="bg-slate-900 text-white font-semibold">
+                            <option key={status} value={status} className="bg-slate-900 text-white font-medium">
                                 {status}
                             </option>
                         ))}
