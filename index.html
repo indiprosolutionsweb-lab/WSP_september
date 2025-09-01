@@ -28,8 +28,15 @@
     input[type='number'] {
       -moz-appearance: textfield;
     }
+
+    /* Custom style to replicate Tailwind's line-clamp functionality */
+    .task-line-clamp {
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 3;
+    }
 </style>
-<link rel="stylesheet" href="/index.css">
 </head>
 <body class="bg-slate-900 text-white">
     <div id="root"></div>
