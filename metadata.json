@@ -1,0 +1,6 @@
+{
+  "name": "WSP",
+  "description": "An advanced task management application with a hierarchical role system (User, Admin, Superadmin). Users manage their own tasks, Admins oversee assigned users, and Superadmins manage the entire system.",
+  "requestFramePermissions": [],
+  "prompt": ""
+}
