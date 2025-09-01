@@ -89,17 +89,17 @@ export const TaskItem: React.FC<TaskItemProps> = ({ task, onUpdateTask, onDelete
                 </div>
             )}
             
-            <div className="flex items-center justify-between pt-0.5 mt-0.5 border-t border-slate-700/50" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between pt-1 border-t border-slate-700/50" onClick={(e) => e.stopPropagation()}>
                 <div className="flex items-center space-x-1">
                     <select
                         value={task.status}
                         onChange={handleStatusChange}
                         disabled={!canEdit}
-                        className={`rounded px-1 py-px text-xs font-medium focus:outline-none focus:ring-1 focus:ring-slate-500 transition-colors ${statusStyles[task.status].select} ${disabledClass}`}
+                        className={`rounded px-0.5 py-px text-[11px] focus:outline-none focus:ring-1 focus:ring-slate-500 transition-colors ${statusStyles[task.status].select} ${disabledClass}`}
                         aria-label="Task status"
                     >
                         {Object.values(TaskStatus).map(status => (
-                            <option key={status} value={status} className="bg-slate-900 text-white font-medium">
+                            <option key={status} value={status} className="bg-slate-900 text-white font-normal">
                                 {status}
                             </option>
                         ))}
@@ -110,7 +110,7 @@ export const TaskItem: React.FC<TaskItemProps> = ({ task, onUpdateTask, onDelete
                         value={task.time_taken || ''}
                         onChange={handleTimeChange}
                         disabled={!canEdit}
-                        className={`w-9 bg-slate-700/60 rounded text-slate-100 text-center py-px px-0.5 text-xs focus:outline-none ${disabledClass}`}
+                        className={`w-8 bg-slate-700/60 rounded text-slate-100 text-center py-px px-0.5 text-[11px] focus:outline-none ${disabledClass}`}
                         min="0"
                         placeholder="Time"
                         aria-label="Time taken in minutes"
@@ -118,10 +118,10 @@ export const TaskItem: React.FC<TaskItemProps> = ({ task, onUpdateTask, onDelete
                 </div>
                 
                 {canEdit && (
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-0.5">
                         <button
                             onClick={handlePriorityToggle}
-                            className={`p-0.5 rounded-full transition-colors ${task.is_priority ? 'text-yellow-400 hover:text-yellow-300' : 'text-slate-500 hover:text-yellow-400'}`}
+                            className={`p-px rounded-full transition-colors ${task.is_priority ? 'text-yellow-400 hover:text-yellow-300' : 'text-slate-500 hover:text-yellow-400'}`}
                             aria-label="Toggle task priority"
                             title="Toggle priority"
                         >
@@ -129,7 +129,7 @@ export const TaskItem: React.FC<TaskItemProps> = ({ task, onUpdateTask, onDelete
                         </button>
                         <button
                             onClick={() => onDeleteTask(task.id)}
-                            className="p-0.5 text-slate-500 hover:text-red-500 hover:bg-red-900/50 rounded-full transition-colors"
+                            className="p-px text-slate-500 hover:text-red-500 hover:bg-red-900/50 rounded-full transition-colors"
                             aria-label="Delete task"
                         >
                             <TrashIcon />
