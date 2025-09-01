@@ -84,7 +84,7 @@ export const TaskItem: React.FC<TaskItemProps> = ({ task, onUpdateTask, onDelete
                     rows={Math.max(2, Math.min(6, editText.split('\n').length))}
                 />
             ) : (
-                <div className={`flex-grow text-slate-200 text-sm ${isExpanded ? 'whitespace-normal break-words' : 'line-clamp-3'}`} title={task.text}>
+                <div className={`flex-grow text-slate-200 text-sm ${isExpanded ? 'whitespace-normal break-words' : 'task-line-clamp'}`} title={task.text}>
                     {task.text}
                 </div>
             )}
