@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Task, TaskStatus } from '../types';
 import { TrashIcon, StarIcon } from './icons';
+import { isTimeTrackingEnabled } from '../constants';
 
 interface TaskItemProps {
     task: Task;
@@ -105,16 +106,18 @@ export const TaskItem: React.FC<TaskItemProps> = ({ task, onUpdateTask, onDelete
                         ))}
                     </select>
 
-                    <input
-                        type="number"
-                        value={task.time_taken || ''}
-                        onChange={handleTimeChange}
-                        disabled={!canEdit}
-                        className={`w-8 bg-slate-700/60 rounded text-slate-100 text-center py-px px-0.5 text-[11px] focus:outline-none ${disabledClass}`}
-                        min="0"
-                        placeholder="Time"
-                        aria-label="Time taken in minutes"
-                    />
+                    {isTimeTrackingEnabled && (
+                        <input
+                            type="number"
+                            value={task.time_taken || ''}
+                            onChange={handleTimeChange}
+                            disabled={!canEdit}
+                            className={`w-8 bg-slate-700/60 rounded text-slate-100 text-center py-px px-0.5 text-[11px] focus:outline-none ${disabledClass}`}
+                            min="0"
+                            placeholder="Time"
+                            aria-label="Time taken in minutes"
+                        />
+                    )}
                 </div>
                 
                 {canEdit && (
