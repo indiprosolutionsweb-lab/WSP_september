@@ -1,5 +1,7 @@
+
 import React from 'react';
 import { Task, TaskStatus, Profile } from '../types';
+import { isTimeTrackingEnabled } from '../constants';
 
 interface DashboardProps {
     startWeek: number;
@@ -110,21 +112,23 @@ export const Dashboard: React.FC<DashboardProps> = ({ startWeek, endWeek, userTa
                 ))}
             </div>
 
-            <div className="my-10">
-                <h3 className="text-2xl font-bold text-slate-200 mb-4 text-center">Time Analysis</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                     <div className="bg-slate-900/70 p-6 rounded-lg shadow-lg border-l-4 border-purple-500 lg:col-span-1 sm:col-span-2">
-                        <h3 className="text-xl font-semibold text-purple-300">Total Time Spent</h3>
-                        <p className="text-4xl font-bold text-white mt-2">{formatTime(stats.timeStats.totalTime)}</p>
-                    </div>
-                    {(Object.keys(statusInfo) as TaskStatus[]).map(status => (
-                        <div key={status} className={`bg-slate-800 p-6 rounded-lg shadow-lg border-l-4 ${statusInfo[status].borderColor}`}>
-                            <h3 className={`text-xl font-semibold ${statusInfo[status].textColor}`}>Time on {statusInfo[status].label}</h3>
-                            <p className="text-4xl font-bold text-white mt-2">{formatTime(stats.timeStats.byStatus[status])}</p>
+            {isTimeTrackingEnabled && (
+                <div className="my-10">
+                    <h3 className="text-2xl font-bold text-slate-200 mb-4 text-center">Time Analysis</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                         <div className="bg-slate-900/70 p-6 rounded-lg shadow-lg border-l-4 border-purple-500 lg:col-span-1 sm:col-span-2">
+                            <h3 className="text-xl font-semibold text-purple-300">Total Time Spent</h3>
+                            <p className="text-4xl font-bold text-white mt-2">{formatTime(stats.timeStats.totalTime)}</p>
                         </div>
-                    ))}
+                        {(Object.keys(statusInfo) as TaskStatus[]).map(status => (
+                            <div key={status} className={`bg-slate-800 p-6 rounded-lg shadow-lg border-l-4 ${statusInfo[status].borderColor}`}>
+                                <h3 className={`text-xl font-semibold ${statusInfo[status].textColor}`}>Time on {statusInfo[status].label}</h3>
+                                <p className="text-4xl font-bold text-white mt-2">{formatTime(stats.timeStats.byStatus[status])}</p>
+                            </div>
+                        ))}
+                    </div>
                 </div>
-            </div>
+            )}
 
             <div>
                 <h3 className="text-2xl font-bold text-slate-200 mb-4 text-center">Task Status Distribution</h3>
