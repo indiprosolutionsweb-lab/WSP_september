@@ -1,6 +1,7 @@
+
 import React, { useState } from 'react';
 import { Task, Profile, Day, WeekTasks } from '../types';
-import { DAYS } from '../constants';
+import { DAYS, isTimeTrackingEnabled } from '../constants';
 import { DownloadModal } from './DownloadModal';
 
 interface DownloadTasksProps {
@@ -55,11 +56,13 @@ export const DownloadTasks: React.FC<DownloadTasksProps> = ({ allTasks, viewingU
             
             csvRows.push(`Week:,${week}`);
             
-            const dayHeaders = ["", ...DAYS.flatMap(day => [
-                escapeCsvField(day),
-                escapeCsvField('Status'),
-                escapeCsvField('Time (m)')
-            ])];
+            const dayHeaders = ["", ...DAYS.flatMap(day => {
+                const headers = [escapeCsvField(day), escapeCsvField('Status')];
+                if (isTimeTrackingEnabled) {
+                    headers.push(escapeCsvField('Time (m)'));
+                }
+                return headers;
+            })];
             csvRows.push(dayHeaders.join(","));
 
             if (weekTasks && Object.keys(weekTasks).length > 0) {
@@ -79,12 +82,16 @@ export const DownloadTasks: React.FC<DownloadTasksProps> = ({ allTasks, viewingU
                         
                         DAYS.forEach(day => {
                             const task = weekTasks[day as Day]?.[i];
+                            const emptyCols = isTimeTrackingEnabled ? ["", "", ""] : ["", ""];
+                            
                             if (task) {
                                 taskRow.push(escapeCsvField(task.text));
                                 taskRow.push(escapeCsvField(task.status));
-                                taskRow.push(escapeCsvField(task.time_taken));
+                                if (isTimeTrackingEnabled) {
+                                    taskRow.push(escapeCsvField(task.time_taken));
+                                }
                             } else {
-                                taskRow.push("", "", "");
+                                taskRow.push(...emptyCols);
                             }
                         });
                         csvRows.push(taskRow.join(","));
