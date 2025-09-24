@@ -1,6 +1,7 @@
+
 import React from 'react';
-import { Task, TaskStatus, Profile } from '../types';
-import { isTimeTrackingEnabled } from '../constants';
+import { Task, TaskStatus, Profile } from '../types.ts';
+import { isTimeTrackingEnabled } from '../constants.ts';
 
 interface DashboardProps {
     startWeek: number;
