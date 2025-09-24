@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { FocusNote, FocusItem, FocusItemStatus } from '../types';
-import { PlusIcon, TrashIcon } from './icons';
+import { FocusNote, FocusItem, FocusItemStatus } from '../types.ts';
+import { PlusIcon, TrashIcon } from './icons.tsx';
 
 const useDebounce = (callback: (...args: any[]) => void, delay: number) => {
     const timeoutRef = useRef<number | null>(null);
