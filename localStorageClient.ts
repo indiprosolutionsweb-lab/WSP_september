@@ -1,6 +1,6 @@
 
-import { MOCK_COMPANIES, MOCK_PROFILES, MOCK_TASKS, MOCK_SUPERADMIN_USER } from './mockData';
-import { Company, Profile, Task, FocusNote } from './types';
+import { MOCK_COMPANIES, MOCK_PROFILES, MOCK_TASKS, MOCK_UNPLANNED_TASKS, MOCK_SUPERADMIN_USER } from './mockData.ts';
+import { Company, Profile, Task, FocusNote, UnplannedTask } from './types.ts';
 
 // --- USER SWITCH FOR LOCAL DEVELOPMENT ---
 // The current user is now controlled by the DevUserSwitcher component,
@@ -44,6 +44,7 @@ const TABLE_KEYS = {
     companies: 'wsp_companies',
     tasks: 'wsp_tasks',
     focus_notes: 'wsp_focus_notes',
+    unplanned_tasks: 'wsp_unplanned_tasks',
 };
 
 const readTable = <T,>(key: string): T[] => {
@@ -71,6 +72,7 @@ const seedData = () => {
         writeTable<Company>(TABLE_KEYS.companies, MOCK_COMPANIES);
         writeTable<Task>(TABLE_KEYS.tasks, MOCK_TASKS);
         writeTable<FocusNote>(TABLE_KEYS.focus_notes, []); // Start with empty focus notes
+        writeTable<UnplannedTask>(TABLE_KEYS.unplanned_tasks, MOCK_UNPLANNED_TASKS);
     }
 };
 
