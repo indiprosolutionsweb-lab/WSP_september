@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { TOTAL_WEEKS } from '../constants';
+import { TOTAL_WEEKS } from '../constants.ts';
 
 interface WeekRangeSelectorProps {
     weekRange: { start: number; end: number };
