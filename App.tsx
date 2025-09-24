@@ -1,23 +1,23 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Day, Task, TaskStatus, Profile, Role, Company, FocusNote, UnplannedTask } from './types';
-import { TOTAL_WEEKS } from './constants';
-import { WeekSelector } from './components/WeekSelector';
-import { TaskBoard } from './components/TaskBoard';
-import { Dashboard } from './components/Dashboard';
-import { Header } from './components/Header';
-import { ManagementView } from './components/ManagementView';
-import { YearCalendarView } from './components/YearCalendarView';
-import { DownloadTasks } from './components/DownloadTasks';
-import { LoginPage } from './components/LoginPage';
-import { ResetPasswordPage } from './components/ResetPasswordPage';
-import { FocusView } from './components/FocusView';
-import { UnplannedTasksView } from './components/UnplannedTasksView';
-import { apiClient, DEV_MODE } from './apiClient';
-import { getWeekNumber, getFinancialYearDetailsForDate } from './dateUtils';
-import { DevUserSwitcher } from './components/DevUserSwitcher';
-import { WeekRangeSelector } from './components/WeekRangeSelector';
-import { TasksListView } from './components/TasksListView';
+import { Day, Task, TaskStatus, Profile, Role, Company, FocusNote, UnplannedTask } from './types.ts';
+import { TOTAL_WEEKS } from './constants.ts';
+import { WeekSelector } from './components/WeekSelector.tsx';
+import { TaskBoard } from './components/TaskBoard.tsx';
+import { Dashboard } from './components/Dashboard.tsx';
+import { Header } from './components/Header.tsx';
+import { ManagementView } from './components/ManagementView.tsx';
+import { YearCalendarView } from './components/YearCalendarView.tsx';
+import { DownloadTasks } from './components/DownloadTasks.tsx';
+import { LoginPage } from './components/LoginPage.tsx';
+import { ResetPasswordPage } from './components/ResetPasswordPage.tsx';
+import { FocusView } from './components/FocusView.tsx';
+import { UnplannedTasksView } from './components/UnplannedTasksView.tsx';
+import { apiClient, DEV_MODE } from './apiClient.ts';
+import { getWeekNumber, getFinancialYearDetailsForDate } from './dateUtils.ts';
+import { DevUserSwitcher } from './components/DevUserSwitcher.tsx';
+import { WeekRangeSelector } from './components/WeekRangeSelector.tsx';
+import { TasksListView } from './components/TasksListView.tsx';
 
 
 const App: React.FC = () => {
