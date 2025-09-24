@@ -1,7 +1,8 @@
+
 import React, { useState } from 'react';
-import { Task, Profile, Day, WeekTasks } from '../types';
-import { DAYS, isTimeTrackingEnabled } from '../constants';
-import { DownloadModal } from './DownloadModal';
+import { Task, Profile, Day, WeekTasks } from '../types.ts';
+import { DAYS, isTimeTrackingEnabled } from '../constants.ts';
+import { DownloadModal } from './DownloadModal.tsx';
 
 interface DownloadTasksProps {
     allTasks: Task[] | undefined; // Flat array for the viewing user
