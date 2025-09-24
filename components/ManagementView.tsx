@@ -1,8 +1,8 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Profile, Role, Company } from '../types';
-import { TrashIcon, DownloadIcon } from './icons';
-import { ConfirmationModal } from './ConfirmationModal';
+import { Profile, Role, Company } from '../types.ts';
+import { TrashIcon, DownloadIcon } from './icons.tsx';
+import { ConfirmationModal } from './ConfirmationModal.tsx';
 
 interface ManagementViewProps {
     profiles: Profile[];
