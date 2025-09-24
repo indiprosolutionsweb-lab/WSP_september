@@ -1,4 +1,5 @@
 
+
 export enum Role {
   User = 'user',
   Admin = 'admin',
@@ -39,11 +40,29 @@ export interface Task {
   created_at: string;
 }
 
+export interface UnplannedTask {
+  id: string;
+  user_id: string;
+  text: string;
+  status: TaskStatus;
+  time_taken: number;
+  is_priority: boolean;
+  created_at: string;
+}
+
 export type Day = 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday' | 'Sunday';
+
+export type FocusItemStatus = 'red' | 'yellow' | 'green' | 'none';
+
+export interface FocusItem {
+  id: string;
+  text: string;
+  status: FocusItemStatus;
+}
 
 export interface FocusNote {
     user_id: string;
-    focus_text: string | null;
+    focus_text: string | null; // This will now be a JSON string of FocusItem[]
     pointers_text: string | null;
 }
 
