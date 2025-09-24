@@ -1,23 +1,18 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { Profile, Role, Company } from '../types';
-import { ExpandIcon, CollapseIcon } from './icons';
+import { ExpandIcon, CollapseIcon, CalendarIcon } from './icons';
 
-type ViewType = 'board' | 'dashboard' | 'focus' | 'management' | 'calendar';
+type ViewType = 'board' | 'dashboard' | 'focus' | 'management' | 'calendar' | 'upcoming' | 'tasks-list';
 
-// Define interfaces for vendor-prefixed properties to satisfy TypeScript
 interface DocumentWithFullscreen extends Document {
 	mozFullScreenElement?: Element;
-	msFullscreenElement?: Element;
 	webkitFullscreenElement?: Element;
 	mozCancelFullScreen?: () => Promise<void>;
-	msExitFullscreen?: () => Promise<void>;
 	webkitExitFullscreen?: () => Promise<void>;
 }
-
 interface HTMLElementWithFullscreen extends HTMLElement {
 	mozRequestFullScreen?: () => Promise<void>;
-	msRequestFullscreen?: () => Promise<void>;
 	webkitRequestFullscreen?: () => Promise<void>;
 }
 
@@ -34,152 +29,77 @@ interface HeaderProps {
     canManageUsers: boolean;
 }
 
-export const Header: React.FC<HeaderProps> = ({
-    currentUser,
-    viewingUser,
-    companies,
-    viewableUsers,
-    onLogout,
-    onSelectViewUser,
-    currentView,
-    onSetCurrentView,
-    canManageUsers,
-    allProfiles
-}) => {
+export const Header: React.FC<HeaderProps> = ({ currentUser, viewingUser, companies, viewableUsers, onLogout, onSelectViewUser, currentView, onSetCurrentView, canManageUsers }) => {
     const [companyFilter, setCompanyFilter] = useState<string>('all');
     const [isFullscreen, setIsFullscreen] = useState(false);
     
     const isSuperAdmin = currentUser.role === Role.Superadmin;
-    const showViewSelector = currentUser.role === Role.Admin || isSuperAdmin;
+    const isViewingOwnBoard = currentUser.id === viewingUser?.id;
 
     useEffect(() => {
-        const getFullscreenElement = (): Element | null => {
-            const doc = document as DocumentWithFullscreen;
-            return doc.fullscreenElement || doc.webkitFullscreenElement || doc.mozFullScreenElement || doc.msFullscreenElement || null;
-        }
-
-        const handleFullscreenChange = () => {
-            setIsFullscreen(!!getFullscreenElement());
-        };
-
-        document.addEventListener('fullscreenchange', handleFullscreenChange);
-        document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
-        document.addEventListener('mozfullscreenchange', handleFullscreenChange);
-        document.addEventListener('MSFullscreenChange', handleFullscreenChange);
-
-        return () => {
-            document.removeEventListener('fullscreenchange', handleFullscreenChange);
-            document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
-            document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
-            document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
-        };
+        const handleFullscreenChange = () => setIsFullscreen(!!(document.fullscreenElement || (document as DocumentWithFullscreen).webkitFullscreenElement || (document as DocumentWithFullscreen).mozFullScreenElement));
+        const events = ['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange'];
+        events.forEach(e => document.addEventListener(e, handleFullscreenChange));
+        return () => events.forEach(e => document.removeEventListener(e, handleFullscreenChange));
     }, []);
 
     const toggleFullscreen = () => {
         const doc = document as DocumentWithFullscreen;
-        const element = document.documentElement as HTMLElementWithFullscreen;
-
-        const isFullscreenActive = () => !!(doc.fullscreenElement || doc.webkitFullscreenElement || doc.mozFullScreenElement || doc.msFullscreenElement);
-
-        if (!isFullscreenActive()) {
-            // Enter fullscreen
-            const requestMethod = element.requestFullscreen || element.webkitRequestFullscreen || element.mozRequestFullScreen || element.msRequestFullscreen;
-            if (typeof requestMethod === 'function') {
-                requestMethod.call(element).catch(err => console.error(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`));
-            }
+        const elem = document.documentElement as HTMLElementWithFullscreen;
+        if (!doc.fullscreenElement && !doc.webkitFullscreenElement && !doc.mozFullScreenElement) {
+            (elem.requestFullscreen || elem.webkitRequestFullscreen || elem.mozRequestFullScreen)?.call(elem).catch(err => console.error(err));
         } else {
-            // Exit fullscreen
-            const exitMethod = doc.exitFullscreen || doc.webkitExitFullscreen || doc.mozCancelFullScreen || doc.msExitFullscreen;
-            if (typeof exitMethod === 'function') {
-                exitMethod.call(doc).catch(err => console.error(`Error attempting to exit full-screen mode: ${err.message} (${err.name})`));
-            }
+            (doc.exitFullscreen || doc.webkitExitFullscreen || doc.mozCancelFullScreen)?.call(doc).catch(err => console.error(err));
         }
     };
 
     const filteredUsers = useMemo(() => {
         if (!isSuperAdmin) return viewableUsers;
-        if (companyFilter === 'all') {
-            return viewableUsers;
-        }
-        if (companyFilter === 'unassigned') {
-            return viewableUsers.filter(u => !u.company_id);
-        }
+        if (companyFilter === 'all') return viewableUsers;
+        if (companyFilter === 'unassigned') return viewableUsers.filter(u => !u.company_id);
         return viewableUsers.filter(u => u.company_id === companyFilter);
     }, [viewableUsers, companyFilter, isSuperAdmin]);
     
     useEffect(() => {
-        if (isSuperAdmin) {
-            const isViewingUserInList = viewingUser && filteredUsers.some(u => u.id === viewingUser.id);
-            if (!isViewingUserInList && filteredUsers.length > 0) {
-                onSelectViewUser(filteredUsers[0].id);
-            }
+        if (isSuperAdmin && viewingUser && !filteredUsers.some(u => u.id === viewingUser.id) && filteredUsers.length > 0) {
+            onSelectViewUser(filteredUsers[0].id);
         }
     }, [filteredUsers, viewingUser, onSelectViewUser, isSuperAdmin]);
     
-    const handleCompanyFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        setCompanyFilter(e.target.value);
-    };
-    
-    const NavButton: React.FC<{ view: ViewType; label: string; colorClass?: string }> = ({ view, label, colorClass = 'blue' }) => {
-        const activeClasses = `bg-${colorClass}-600 text-white shadow-md`;
-        const inactiveClasses = 'bg-slate-700 text-slate-300 hover:bg-slate-600';
-        return (
-            <button
-                onClick={() => onSetCurrentView(view)}
-                className={`px-3 py-1.5 rounded-md font-semibold text-sm transition-colors ${currentView === view ? activeClasses : inactiveClasses}`}
-            >
-                {label}
-            </button>
-        );
-    };
+    const NavButton: React.FC<{ view: ViewType; label: string; colorClass?: string }> = ({ view, label, colorClass = 'blue' }) => (
+        <button onClick={() => onSetCurrentView(view)} className={`px-3 py-1.5 rounded-md font-semibold text-sm transition-colors ${currentView === view ? `bg-${colorClass}-600 text-white shadow-md` : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`}>{label}</button>
+    );
 
     return (
         <header className="mb-4">
              <div className="w-full max-w-screen-2xl mx-auto flex flex-col xl:flex-row items-center justify-between gap-4 text-sm bg-slate-800/50 p-2 rounded-lg">
-                {/* Left: Title */}
-                <h1 className="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-600 flex-shrink-0">
-                    WSP
-                </h1>
-
-                {/* Center: Main Navigation */}
+                <div className="flex items-center gap-2.5 shrink-0">
+                    <div className="flex flex-col items-center justify-center">
+                        <svg viewBox="0 0 200 200" className="h-5 w-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none">
+                            <rect x="80" y="0" width="120" height="80" fill="#F4911E"/><rect x="0" y="80" width="80" height="120" fill="#F4911E"/><rect x="80" y="80" width="120" height="120" fill="#0098DA"/>
+                        </svg>
+                        <span className="text-[9px] text-slate-400 font-light tracking-wider -mt-0.5">indipro</span>
+                    </div>
+                    <h1 className="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-sky-600">WSP</h1>
+                </div>
                 <nav className="flex justify-center gap-2 flex-wrap">
                     <NavButton view="board" label="Task Board" />
                     <NavButton view="dashboard" label="Dashboard" />
-                    <NavButton view="focus" label="Focus" colorClass="teal" />
-                    <NavButton view="calendar" label="Year Calendar" />
-                    {canManageUsers && (
-                         <NavButton view="management" label="Management" colorClass="purple" />
-                    )}
+                    {isViewingOwnBoard && <NavButton view="tasks-list" label="Tasks List" colorClass="green" />}
+                    {isViewingOwnBoard && <NavButton view="focus" label="Focus" colorClass="teal" />}
+                    {isViewingOwnBoard && <NavButton view="upcoming" label="Upcoming" colorClass="amber" />}
+                    {canManageUsers && <NavButton view="management" label="Management" colorClass="purple" />}
                 </nav>
-
-                 {/* Right: User Controls */}
                 <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-end gap-3 flex-wrap">
                     <span className="font-semibold text-slate-300 hidden sm:inline">Welcome, {currentUser.name}</span>
-                    <button 
-                        onClick={toggleFullscreen}
-                        className="p-1.5 rounded-full text-slate-400 hover:bg-slate-700 hover:text-white transition-colors"
-                        aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-                        title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-                    >
-                        {isFullscreen ? <CollapseIcon /> : <ExpandIcon />}
-                    </button>
-                    <button 
-                        onClick={onLogout}
-                        className="bg-red-600 hover:bg-red-700 text-white font-semibold px-3 py-1 rounded-md transition-colors text-sm"
-                    >
-                        Logout
-                    </button>
-
+                    <button onClick={() => onSetCurrentView('calendar')} className={`p-1.5 rounded-full transition-colors ${currentView === 'calendar' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-slate-700'}`} title="Open year calendar"><CalendarIcon /></button>
+                    <button onClick={toggleFullscreen} className="p-1.5 rounded-full text-slate-400 hover:bg-slate-700" title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}>{isFullscreen ? <CollapseIcon /> : <ExpandIcon />}</button>
+                    <button onClick={onLogout} className="bg-red-600 hover:bg-red-700 text-white font-semibold px-3 py-1 rounded-md transition-colors text-sm">Logout</button>
                     {isSuperAdmin ? (
                          <>
                             <div className="flex items-center gap-2">
                                 <label htmlFor="company-filter" className="font-semibold text-slate-300">Co:</label>
-                                <select
-                                    id="company-filter"
-                                    value={companyFilter}
-                                    onChange={handleCompanyFilterChange}
-                                    className="bg-slate-700 border border-slate-600 rounded-md px-2 py-1 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                >
+                                <select id="company-filter" value={companyFilter} onChange={(e) => setCompanyFilter(e.target.value)} className="bg-slate-700 border border-slate-600 rounded-md px-2 py-1 text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
                                     <option value="all">All</option>
                                     {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                                     <option value="unassigned">Unassigned</option>
@@ -187,32 +107,17 @@ export const Header: React.FC<HeaderProps> = ({
                             </div>
                             <div className="flex items-center gap-2">
                                 <label htmlFor="view-selector" className="font-semibold text-slate-300">View:</label>
-                                <select
-                                    id="view-selector"
-                                    value={viewingUser?.id || ''}
-                                    onChange={(e) => onSelectViewUser(e.target.value)}
-                                    className="bg-slate-700 border border-slate-600 rounded-md px-2 py-1 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    disabled={filteredUsers.length === 0}
-                                >
-                                    {filteredUsers.length > 0 ? filteredUsers.map(user => (
-                                        <option key={user.id} value={user.id}>{user.name}</option>
-                                    )) : <option>No users</option>}
+                                <select id="view-selector" value={viewingUser?.id || ''} onChange={(e) => onSelectViewUser(e.target.value)} className="bg-slate-700 border border-slate-600 rounded-md px-2 py-1 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" disabled={filteredUsers.length === 0}>
+                                    {filteredUsers.length > 0 ? filteredUsers.map(user => (<option key={user.id} value={user.id}>{user.name}</option>)) : <option>No users</option>}
                                 </select>
                             </div>
                         </>
-                    ) : showViewSelector && (
+                    ) : (currentUser.role === Role.Admin) && (
                         <div className="flex items-center gap-2">
                             <label htmlFor="view-selector" className="font-semibold text-slate-300">Viewing:</label>
-                             <select
-                                id="view-selector"
-                                value={viewingUser?.id || ''}
-                                onChange={(e) => onSelectViewUser(e.target.value)}
-                                className="bg-slate-700 border border-slate-600 rounded-md px-2 py-1 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            >
+                             <select id="view-selector" value={viewingUser?.id || ''} onChange={(e) => onSelectViewUser(e.target.value)} className="bg-slate-700 border border-slate-600 rounded-md px-2 py-1 text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
                                 <option key={currentUser.id} value={currentUser.id}>My Board</option>
-                                {viewableUsers.filter(u => u.id !== currentUser.id).map(user => (
-                                    <option key={user.id} value={user.id}>{user.name}</option>
-                                ))}
+                                {viewableUsers.filter(u => u.id !== currentUser.id).map(user => (<option key={user.id} value={user.id}>{user.name}</option>))}
                             </select>
                         </div>
                     )}
