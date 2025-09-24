@@ -1,8 +1,8 @@
 
 import React, { useState } from 'react';
-import { Day, Task } from '../types';
-import { TaskItem } from './TaskItem';
-import { PlusIcon } from './icons';
+import { Day, Task } from '../types.ts';
+import { TaskItem } from './TaskItem.tsx';
+import { PlusIcon } from './icons.tsx';
 
 interface DayColumnProps {
     day: Day;
