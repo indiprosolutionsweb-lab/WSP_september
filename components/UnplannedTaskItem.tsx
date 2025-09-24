@@ -1,8 +1,8 @@
 
 import React, { useState } from 'react';
-import { UnplannedTask, TaskStatus, Day } from '../types';
-import { TrashIcon, StarIcon } from './icons';
-import { DAYS, TOTAL_WEEKS, isTimeTrackingEnabled } from '../constants';
+import { UnplannedTask, TaskStatus, Day } from '../types.ts';
+import { TrashIcon, StarIcon } from './icons.tsx';
+import { DAYS, TOTAL_WEEKS, isTimeTrackingEnabled } from '../constants.ts';
 
 interface UnplannedTaskItemProps {
     task: UnplannedTask;
