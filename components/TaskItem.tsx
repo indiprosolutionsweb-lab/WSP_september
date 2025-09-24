@@ -1,9 +1,8 @@
 
-
 import React, { useState } from 'react';
-import { Task, TaskStatus } from '../types';
-import { TrashIcon, StarIcon } from './icons';
-import { isTimeTrackingEnabled } from '../constants';
+import { Task, TaskStatus } from '../types.ts';
+import { TrashIcon, StarIcon } from './icons.tsx';
+import { isTimeTrackingEnabled } from '../constants.ts';
 
 interface TaskItemProps {
     task: Task;
