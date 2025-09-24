@@ -1,8 +1,8 @@
 
 import React, { useState } from 'react';
-import { UnplannedTask, Day } from '../types';
-import { UnplannedTaskItem } from './UnplannedTaskItem';
-import { PlusIcon } from './icons';
+import { UnplannedTask, Day } from '../types.ts';
+import { UnplannedTaskItem } from './UnplannedTaskItem.tsx';
+import { PlusIcon } from './icons.tsx';
 
 interface UnplannedTasksViewProps {
     unplannedTasks: UnplannedTask[];
