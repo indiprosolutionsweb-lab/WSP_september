@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Profile, Role, Company } from '../types';
-import { ExpandIcon, CollapseIcon, CalendarIcon } from './icons';
+import { Profile, Role, Company } from '../types.ts';
+import { ExpandIcon, CollapseIcon, CalendarIcon } from './icons.tsx';
 
 type ViewType = 'board' | 'dashboard' | 'focus' | 'management' | 'calendar' | 'upcoming' | 'tasks-list';
 
