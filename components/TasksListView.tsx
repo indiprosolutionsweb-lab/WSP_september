@@ -1,9 +1,9 @@
 
 import React, { useState, useMemo } from 'react';
-import { Task, TaskStatus, Profile } from '../types';
-import { WeekRangeSelector } from './WeekRangeSelector';
-import { FilteredTaskItem } from './FilteredTaskItem';
-import { DAYS, isTimeTrackingEnabled } from '../constants';
+import { Task, TaskStatus, Profile } from '../types.ts';
+import { WeekRangeSelector } from './WeekRangeSelector.tsx';
+import { FilteredTaskItem } from './FilteredTaskItem.tsx';
+import { DAYS, isTimeTrackingEnabled } from '../constants.ts';
 
 interface TasksListViewProps {
     userTasks: Task[];
