@@ -1,10 +1,9 @@
 
-import { Day } from './types';
+import { Day } from './types.ts';
 
 export const DAYS: Day[] = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
 export const TOTAL_WEEKS = 52;
 
-// Feature flag to control visibility of time tracking.
-// Set to `true` to show time inputs and analysis, `false` to hide.
+// Controls whether the time tracking input is visible on tasks.
 export const isTimeTrackingEnabled = false;
