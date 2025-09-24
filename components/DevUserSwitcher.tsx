@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import { MOCK_PROFILES } from '../mockData';
-import { Role } from '../types';
+import { MOCK_PROFILES } from '../mockData.ts';
+import { Role } from '../types.ts';
 
 const DEV_USER_OVERRIDE_KEY = 'wsp_dev_user_override';
 
