@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { Task, TaskStatus } from '../types';
-import { isTimeTrackingEnabled } from '../constants';
+import { Task, TaskStatus } from '../types.ts';
+import { isTimeTrackingEnabled } from '../constants.ts';
 
 interface FilteredTaskItemProps {
     task: Task;
