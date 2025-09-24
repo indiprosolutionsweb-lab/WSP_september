@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect } from 'react';
-import { TOTAL_WEEKS } from '../constants';
-import { ChevronLeftIcon, ChevronRightIcon } from './icons';
+import { TOTAL_WEEKS } from '../constants.ts';
+import { ChevronLeftIcon, ChevronRightIcon } from './icons.tsx';
 
 interface WeekSelectorProps {
     currentWeek: number;
