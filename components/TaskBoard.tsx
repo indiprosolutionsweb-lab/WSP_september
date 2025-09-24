@@ -1,8 +1,8 @@
 
 import React, { useMemo } from 'react';
-import { Day, Task } from '../types';
-import { DAYS } from '../constants';
-import { DayColumn } from './DayColumn';
+import { Day, Task } from '../types.ts';
+import { DAYS } from '../constants.ts';
+import { DayColumn } from './DayColumn.tsx';
 
 interface TaskBoardProps {
     currentWeek: number;
