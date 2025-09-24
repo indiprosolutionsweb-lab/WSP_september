@@ -1,128 +1,108 @@
 
-import React, { useState, useMemo, useEffect } from 'react';
-import { Profile, Role, Company } from '../types';
-import { ExpandIcon, CollapseIcon, CalendarIcon } from './icons';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { FocusNote, FocusItem, FocusItemStatus } from '../types';
+import { PlusIcon, TrashIcon } from './icons';
 
-type ViewType = 'board' | 'dashboard' | 'focus' | 'management' | 'calendar' | 'upcoming' | 'tasks-list';
-
-interface DocumentWithFullscreen extends Document {
-	mozFullScreenElement?: Element;
-	webkitFullscreenElement?: Element;
-	mozCancelFullScreen?: () => Promise<void>;
-	webkitExitFullscreen?: () => Promise<void>;
-}
-interface HTMLElementWithFullscreen extends HTMLElement {
-	mozRequestFullScreen?: () => Promise<void>;
-	webkitRequestFullscreen?: () => Promise<void>;
-}
-
-interface HeaderProps {
-    currentUser: Profile;
-    viewingUser: Profile | null;
-    allProfiles: Profile[];
-    companies: Company[];
-    viewableUsers: Profile[];
-    onLogout: () => void;
-    onSelectViewUser: (userId: string) => void;
-    currentView: ViewType;
-    onSetCurrentView: (view: ViewType) => void;
-    canManageUsers: boolean;
-}
-
-export const Header: React.FC<HeaderProps> = ({ currentUser, viewingUser, companies, viewableUsers, onLogout, onSelectViewUser, currentView, onSetCurrentView, canManageUsers }) => {
-    const [companyFilter, setCompanyFilter] = useState<string>('all');
-    const [isFullscreen, setIsFullscreen] = useState(false);
-    
-    const isSuperAdmin = currentUser.role === Role.Superadmin;
-    const isViewingOwnBoard = currentUser.id === viewingUser?.id;
-
-    useEffect(() => {
-        const handleFullscreenChange = () => setIsFullscreen(!!(document.fullscreenElement || (document as DocumentWithFullscreen).webkitFullscreenElement || (document as DocumentWithFullscreen).mozFullScreenElement));
-        const events = ['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange'];
-        events.forEach(e => document.addEventListener(e, handleFullscreenChange));
-        return () => events.forEach(e => document.removeEventListener(e, handleFullscreenChange));
-    }, []);
-
-    const toggleFullscreen = () => {
-        const doc = document as DocumentWithFullscreen;
-        const elem = document.documentElement as HTMLElementWithFullscreen;
-        if (!doc.fullscreenElement && !doc.webkitFullscreenElement && !doc.mozFullScreenElement) {
-            (elem.requestFullscreen || elem.webkitRequestFullscreen || elem.mozRequestFullScreen)?.call(elem).catch(err => console.error(err));
-        } else {
-            (doc.exitFullscreen || doc.webkitExitFullscreen || doc.mozCancelFullScreen)?.call(doc).catch(err => console.error(err));
-        }
+const useDebounce = (callback: (...args: any[]) => void, delay: number) => {
+    const timeoutRef = useRef<number | null>(null);
+    return (...args: any[]) => {
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        timeoutRef.current = window.setTimeout(() => callback(...args), delay);
     };
+};
 
-    const filteredUsers = useMemo(() => {
-        if (!isSuperAdmin) return viewableUsers;
-        if (companyFilter === 'all') return viewableUsers;
-        if (companyFilter === 'unassigned') return viewableUsers.filter(u => !u.company_id);
-        return viewableUsers.filter(u => u.company_id === companyFilter);
-    }, [viewableUsers, companyFilter, isSuperAdmin]);
-    
+const StatusSelector: React.FC<{ status: FocusItemStatus; onSelect: (status: FocusItemStatus) => void; }> = ({ status, onSelect }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const wrapperRef = useRef<HTMLDivElement>(null);
+    const colors: { [key in FocusItemStatus]: string } = { 'red': 'bg-red-500', 'yellow': 'bg-yellow-400', 'green': 'bg-green-500', 'none': 'bg-slate-600 border-2 border-slate-500' };
+    const statusLabels: { [key in FocusItemStatus]: string } = { green: 'Green', yellow: 'Yellow', red: 'Red', none: 'Clear' };
+    const statusOptions: FocusItemStatus[] = ['green', 'yellow', 'red'];
     useEffect(() => {
-        if (isSuperAdmin && viewingUser && !filteredUsers.some(u => u.id === viewingUser.id) && filteredUsers.length > 0) {
-            onSelectViewUser(filteredUsers[0].id);
-        }
-    }, [filteredUsers, viewingUser, onSelectViewUser, isSuperAdmin]);
-    
-    const NavButton: React.FC<{ view: ViewType; label: string; colorClass?: string }> = ({ view, label, colorClass = 'blue' }) => (
-        <button onClick={() => onSetCurrentView(view)} className={`px-3 py-1.5 rounded-md font-semibold text-sm transition-colors ${currentView === view ? `bg-${colorClass}-600 text-white shadow-md` : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`}>{label}</button>
+        const handleClickOutside = (event: MouseEvent) => { if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) setIsOpen(false); };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+    return (
+        <div className="relative" ref={wrapperRef}>
+            <button onClick={() => setIsOpen(p => !p)} className={`w-5 h-5 rounded-full shrink-0 transition-transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-800 focus:ring-blue-500 ${colors[status]}`} aria-label={`Status: ${status}.`} />
+            {isOpen && (
+                <div className="absolute z-10 top-full mt-2 right-0 bg-slate-900 border border-slate-700 rounded-lg p-1 flex flex-col gap-1 shadow-lg w-32">
+                    {statusOptions.map(s => <button key={s} onClick={() => { onSelect(s); setIsOpen(false); }} className="flex items-center gap-2 w-full text-left p-1.5 rounded-md text-slate-200 hover:bg-slate-700"><span className={`w-4 h-4 rounded-full ${colors[s]}`} /><span>{statusLabels[s]}</span></button>)}
+                    <div className="border-t border-slate-700/50 my-1" />
+                    <button onClick={() => { onSelect('none'); setIsOpen(false); }} className="flex items-center gap-2 w-full text-left p-1.5 rounded-md text-slate-400 hover:bg-slate-700"><div className={`w-4 h-4 rounded-full ${colors['none']} flex items-center justify-center`}><svg className="w-3 h-3 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></div><span>{statusLabels['none']}</span></button>
+                </div>
+            )}
+        </div>
     );
+};
+
+export const FocusView: React.FC<{ note: FocusNote | null; onSave: (note: { focus_text: string | null; pointers_text: string | null; }) => void; }> = ({ note, onSave }) => {
+    const [focusItems, setFocusItems] = useState<FocusItem[]>([]);
+    const [pointersText, setPointersText] = useState('');
+    const [isSaving, setIsSaving] = useState(false);
+    const isInitialMount = useRef(true);
+
+    useEffect(() => {
+        if (note) {
+            try {
+                const parsed = note.focus_text ? JSON.parse(note.focus_text) : [];
+                setFocusItems(Array.isArray(parsed) ? parsed : [{ id: crypto.randomUUID(), text: String(note.focus_text), status: 'none' }]);
+            } catch (e) {
+                setFocusItems(note.focus_text ? [{ id: crypto.randomUUID(), text: note.focus_text, status: 'none' }] : []);
+            }
+            setPointersText(note.pointers_text || '');
+        }
+        const timer = setTimeout(() => { isInitialMount.current = false; }, 500);
+        return () => clearTimeout(timer);
+    }, [note]);
+
+    const debouncedSave = useCallback(useDebounce((newFocusItems: FocusItem[], newPointers: string) => {
+        if (isInitialMount.current) return;
+        setIsSaving(true);
+        onSave({ focus_text: JSON.stringify(newFocusItems), pointers_text: newPointers });
+        setTimeout(() => setIsSaving(false), 700);
+    }, 1000), [onSave]);
+
+    const updateFocusItems = (items: FocusItem[]) => { setFocusItems(items); debouncedSave(items, pointersText); };
+    const handleAddItem = () => updateFocusItems([...focusItems, { id: crypto.randomUUID(), text: '', status: 'none' }]);
+    const handleUpdateItemText = (id: string, text: string) => updateFocusItems(focusItems.map(item => item.id === id ? { ...item, text } : item));
+    const handleUpdateItemStatus = (id: string, status: FocusItemStatus) => updateFocusItems(focusItems.map(item => item.id === id ? { ...item, status } : item));
+    const handleDeleteItem = (id: string) => updateFocusItems(focusItems.filter(item => item.id !== id));
+    const handlePointersChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => { setPointersText(e.target.value); debouncedSave(focusItems, e.target.value); };
+    const statusBorderStyles: { [key in FocusItemStatus]: string } = { green: 'border-green-500', yellow: 'border-yellow-400', red: 'border-red-500', none: 'border-slate-700/50' };
 
     return (
-        <header className="mb-4">
-             <div className="w-full max-w-screen-2xl mx-auto flex flex-col xl:flex-row items-center justify-between gap-4 text-sm bg-slate-800/50 p-2 rounded-lg">
-                <div className="flex items-center gap-2.5 shrink-0">
-                    <div className="flex flex-col items-center justify-center">
-                        <svg viewBox="0 0 200 200" className="h-5 w-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none">
-                            <rect x="80" y="0" width="120" height="80" fill="#F4911E"/><rect x="0" y="80" width="80" height="120" fill="#F4911E"/><rect x="80" y="80" width="120" height="120" fill="#0098DA"/>
-                        </svg>
-                        <span className="text-[9px] text-slate-400 font-light tracking-wider -mt-0.5">indipro</span>
-                    </div>
-                    <h1 className="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-sky-600">WSP</h1>
-                </div>
-                <nav className="flex justify-center gap-2 flex-wrap">
-                    <NavButton view="board" label="Task Board" />
-                    <NavButton view="dashboard" label="Dashboard" />
-                    {isViewingOwnBoard && <NavButton view="tasks-list" label="Tasks List" colorClass="green" />}
-                    {isViewingOwnBoard && <NavButton view="focus" label="Focus" colorClass="teal" />}
-                    {isViewingOwnBoard && <NavButton view="upcoming" label="Upcoming" colorClass="amber" />}
-                    {canManageUsers && <NavButton view="management" label="Management" colorClass="purple" />}
-                </nav>
-                <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-end gap-3 flex-wrap">
-                    <span className="font-semibold text-slate-300 hidden sm:inline">Welcome, {currentUser.name}</span>
-                    <button onClick={() => onSetCurrentView('calendar')} className={`p-1.5 rounded-full transition-colors ${currentView === 'calendar' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-slate-700'}`} title="Open year calendar"><CalendarIcon /></button>
-                    <button onClick={toggleFullscreen} className="p-1.5 rounded-full text-slate-400 hover:bg-slate-700" title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}>{isFullscreen ? <CollapseIcon /> : <ExpandIcon />}</button>
-                    <button onClick={onLogout} className="bg-red-600 hover:bg-red-700 text-white font-semibold px-3 py-1 rounded-md transition-colors text-sm">Logout</button>
-                    {isSuperAdmin ? (
-                         <>
-                            <div className="flex items-center gap-2">
-                                <label htmlFor="company-filter" className="font-semibold text-slate-300">Co:</label>
-                                <select id="company-filter" value={companyFilter} onChange={(e) => setCompanyFilter(e.target.value)} className="bg-slate-700 border border-slate-600 rounded-md px-2 py-1 text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                    <option value="all">All</option>
-                                    {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                                    <option value="unassigned">Unassigned</option>
-                                </select>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <label htmlFor="view-selector" className="font-semibold text-slate-300">View:</label>
-                                <select id="view-selector" value={viewingUser?.id || ''} onChange={(e) => onSelectViewUser(e.target.value)} className="bg-slate-700 border border-slate-600 rounded-md px-2 py-1 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" disabled={filteredUsers.length === 0}>
-                                    {filteredUsers.length > 0 ? filteredUsers.map(user => (<option key={user.id} value={user.id}>{user.name}</option>)) : <option>No users</option>}
-                                </select>
-                            </div>
-                        </>
-                    ) : (currentUser.role === Role.Admin) && (
-                        <div className="flex items-center gap-2">
-                            <label htmlFor="view-selector" className="font-semibold text-slate-300">Viewing:</label>
-                             <select id="view-selector" value={viewingUser?.id || ''} onChange={(e) => onSelectViewUser(e.target.value)} className="bg-slate-700 border border-slate-600 rounded-md px-2 py-1 text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                <option key={currentUser.id} value={currentUser.id}>My Board</option>
-                                {viewableUsers.filter(u => u.id !== currentUser.id).map(user => (<option key={user.id} value={user.id}>{user.name}</option>))}
-                            </select>
+        <div className="bg-slate-800/50 rounded-xl p-6 md:p-8 mt-4 flex-grow flex flex-col gap-6">
+            <div className="flex justify-between items-center">
+                <h2 className="text-3xl font-bold text-slate-200">My Focus</h2>
+                <div className={`text-sm transition-opacity duration-300 ${isSaving ? 'opacity-100' : 'opacity-0'}`}><span className="text-slate-400 italic">Saving...</span></div>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 flex-grow min-h-[300px]">
+                <div className="flex flex-col">
+                    <label className="text-lg font-semibold text-blue-300 mb-2">My Focus</label>
+                    <div className="flex-grow w-full bg-slate-800 border border-slate-700 rounded-lg p-3 flex flex-col gap-2">
+                        <div className="flex-grow space-y-2 overflow-y-auto pr-2 -mr-3">
+                            {focusItems.length === 0 && <p className="text-slate-500 text-center py-4">Click "Add Item" to get started.</p>}
+                            {focusItems.map((item) => (
+                                <div key={item.id} className={`flex items-start gap-2 group p-2 rounded-md border transition-colors ${statusBorderStyles[item.status]}`}>
+                                    <textarea value={item.text} onChange={(e) => handleUpdateItemText(item.id, e.target.value)} placeholder="Enter focus item..." className="flex-grow w-full bg-transparent p-0 text-slate-200 placeholder-slate-500 focus:outline-none resize-none text-sm" rows={1} onFocus={e => { e.currentTarget.style.height = 'auto'; e.currentTarget.style.height = `${e.currentTarget.scrollHeight}px`; }} onInput={e => { e.currentTarget.style.height = 'auto'; e.currentTarget.style.height = `${e.currentTarget.scrollHeight}px`; }} />
+                                    <div className="pt-1 flex items-center gap-1.5 shrink-0">
+                                        <StatusSelector status={item.status} onSelect={(status) => handleUpdateItemStatus(item.id, status)} />
+                                        <button onClick={() => handleDeleteItem(item.id)} className="p-1.5 text-slate-600 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity" aria-label="Delete item"><TrashIcon /></button>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
-                    )}
+                        <div className="pt-2 mt-auto border-t border-slate-700/50">
+                            <button onClick={handleAddItem} className="flex items-center gap-2 text-sm text-blue-400 hover:text-blue-300 font-semibold p-1 -m-1 rounded"><PlusIcon className="w-4 h-4" /> Add Item</button>
+                        </div>
+                    </div>
                 </div>
-             </div>
-        </header>
+                <div className="flex flex-col">
+                    <label htmlFor="pointers-text" className="text-lg font-semibold text-purple-300 mb-2">Pointers / Notes</label>
+                    <textarea id="pointers-text" value={pointersText} onChange={handlePointersChange} className="flex-grow w-full bg-slate-800 border border-slate-700 rounded-lg p-4 text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none" aria-label="Pointers and notes" />
+                </div>
+            </div>
+        </div>
     );
 };
