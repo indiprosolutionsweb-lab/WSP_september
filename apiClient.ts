@@ -1,6 +1,6 @@
 
-import { supa } from './supabaseClient';
-import { mockSupa } from './localStorageClient';
+import { supa } from './supabaseClient.ts';
+import { mockSupa } from './localStorageClient.ts';
 
 // --- PRODUCTION MODE SWITCH ---
 // Set to 'true' to use localStorage for offline development.
