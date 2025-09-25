@@ -1,40 +1,24 @@
-
 import { MOCK_COMPANIES, MOCK_PROFILES, MOCK_TASKS, MOCK_UNPLANNED_TASKS, MOCK_SUPERADMIN_USER } from './mockData.ts';
-import { Company, Profile, Task, FocusNote, UnplannedTask } from './types.ts';
+import { Company, Profile, Task, FocusNote, UnplannedTask, TaskStats, TaskStatus } from './types.ts';
 
 // --- USER SWITCH FOR LOCAL DEVELOPMENT ---
-// The current user is now controlled by the DevUserSwitcher component,
-// which writes to localStorage. This section is no longer edited directly.
-
+// FIX: Corrected typo in constant name from DEV_USER_OVERRRIDE_KEY to DEV_USER_OVERRIDE_KEY
 const DEV_USER_OVERRIDE_KEY = 'wsp_dev_user_override';
-
 const getMockUserId = (): string | null => {
     const override = localStorage.getItem(DEV_USER_OVERRIDE_KEY);
-    if (override !== null) {
-        // If the stored value is the string 'null', treat as logged out.
-        return override === 'null' ? null : override;
-    }
-    // Default to Super Admin if no override is set in localStorage.
-    return 'superadmin-001'; 
+    return override === 'null' ? null : (override || 'superadmin-001');
 };
-
 const CURRENT_MOCK_USER_ID = getMockUserId();
 
-
-// --- DO NOT EDIT BELOW THIS LINE ---
-
 const MOCK_USER_SESSION = (() => {
-    if (!CURRENT_MOCK_USER_ID) {
-        return null; // No user logged in, will show login page
-    }
+    if (!CURRENT_MOCK_USER_ID) return null;
     const userProfile = MOCK_PROFILES.find(p => p.id === CURRENT_MOCK_USER_ID);
     if (!userProfile) {
-        console.error(`Mock user with ID "${CURRENT_MOCK_USER_ID}" not found. Defaulting to Super Admin.`);
+        console.error(`Mock user with ID "${CURRENT_MOCK_USER_ID}" not found.`);
         return { user: MOCK_SUPERADMIN_USER };
     }
     return { user: userProfile };
 })();
-
 
 // --- UTILITY FUNCTIONS ---
 const generateUUID = () => crypto.randomUUID();
@@ -52,7 +36,7 @@ const readTable = <T,>(key: string): T[] => {
         const data = localStorage.getItem(key);
         return data ? JSON.parse(data) : [];
     } catch (error) {
-        console.error(`Error reading table ${key} from localStorage`, error);
+        console.error(`Error reading table ${key}`, error);
         return [];
     }
 };
@@ -61,7 +45,7 @@ const writeTable = <T,>(key: string, data: T[]): void => {
     try {
         localStorage.setItem(key, JSON.stringify(data, null, 2));
     } catch (error) {
-        console.error(`Error writing table ${key} to localStorage`, error);
+        console.error(`Error writing table ${key}`, error);
     }
 };
 
@@ -71,13 +55,111 @@ const seedData = () => {
         writeTable<Profile>(TABLE_KEYS.profiles, MOCK_PROFILES);
         writeTable<Company>(TABLE_KEYS.companies, MOCK_COMPANIES);
         writeTable<Task>(TABLE_KEYS.tasks, MOCK_TASKS);
-        writeTable<FocusNote>(TABLE_KEYS.focus_notes, []); // Start with empty focus notes
+        writeTable<FocusNote>(TABLE_KEYS.focus_notes, []);
         writeTable<UnplannedTask>(TABLE_KEYS.unplanned_tasks, MOCK_UNPLANNED_TASKS);
     }
 };
 
-// Initialize data on load
 seedData();
+
+// --- NEW MOCK QUERY BUILDER ---
+class MockQueryBuilder {
+    private tableName: keyof typeof TABLE_KEYS;
+    private filters: { type: 'eq' | 'neq' | 'is', column: string, value: any }[] = [];
+    // FIX: Renamed property from 'range' to '_range' to avoid conflict with the 'range' method.
+    private _range: { from: number, to: number } | null = null;
+    private _order: { column: string, options: { ascending: boolean } } | null = null;
+    private options: { count?: 'exact' } = {};
+
+    constructor(tableName: keyof typeof TABLE_KEYS) {
+        this.tableName = tableName;
+    }
+
+    select(columns: string = '*', options: { count?: 'exact' } = {}) {
+        this.options = options;
+        return this;
+    }
+
+    eq(column: string, value: any) {
+        this.filters.push({ type: 'eq', column, value });
+        return this;
+    }
+    
+    neq(column: string, value: any) {
+        this.filters.push({ type: 'neq', column, value });
+        return this;
+    }
+
+    is(column: string, value: any) {
+        this.filters.push({ type: 'is', column, value });
+        return this;
+    }
+
+    order(column: string, options: { ascending: boolean } = { ascending: true }) {
+        this._order = { column, options };
+        return this;
+    }
+
+    range(from: number, to: number) {
+        this._range = { from, to };
+        return this;
+    }
+
+    maybeSingle() {
+        // This is a special case of `then` for a single record.
+        const promise = this.executeQuery();
+        return promise.then(result => {
+             if (result.error) return { data: null, error: result.error };
+             const data = result.data && result.data.length > 0 ? result.data[0] : null;
+             return { data, error: null };
+        });
+    }
+
+    then(onfulfilled: (value: any) => any, onrejected?: (reason: any) => any) {
+        return this.executeQuery().then(onfulfilled, onrejected);
+    }
+
+    private async executeQuery() {
+        try {
+            let tableData = readTable(TABLE_KEYS[this.tableName]);
+
+            this.filters.forEach(filter => {
+                tableData = tableData.filter((row: any) => {
+                    switch (filter.type) {
+                        case 'eq': return row[filter.column] === filter.value;
+                        case 'neq': return row[filter.column] !== filter.value;
+                        case 'is': return row[filter.column] === filter.value;
+                        default: return true;
+                    }
+                });
+            });
+
+            if (this._order) {
+                const { column, options } = this._order;
+                tableData.sort((a: any, b: any) => {
+                    const valA = a[column];
+                    const valB = b[column];
+                    if (valA === null || valA === undefined) return options.ascending ? -1 : 1;
+                    if (valB === null || valB === undefined) return options.ascending ? 1 : -1;
+                    if (valA < valB) return options.ascending ? -1 : 1;
+                    if (valA > valB) return options.ascending ? 1 : -1;
+                    return 0;
+                });
+            }
+
+            const count = this.options.count === 'exact' ? tableData.length : null;
+
+            if (this._range) {
+                tableData = tableData.slice(this._range.from, this._range.to + 1);
+            }
+
+            return { data: tableData, error: null, count };
+        } catch (error) {
+            console.error("Mock query execution error:", error);
+            return { data: null, error, count: null };
+        }
+    }
+}
 
 // --- MOCK SUPABASE CLIENT ---
 
@@ -85,58 +167,23 @@ const from = (tableName: keyof typeof TABLE_KEYS) => {
     const tableKey = TABLE_KEYS[tableName];
 
     return {
-        select: (columns = '*') => ({
-            eq: async (column: string, value: any) => {
-                const data = readTable(tableKey).filter((row: any) => row[column] === value);
-                return { data, error: null };
-            },
-            maybeSingle: async () => {
-                // This is a simplified version of maybeSingle, assuming it's chained after an `eq`
-                // In a real scenario, this would be more complex. The `select` itself doesn't have eq.
-                // It should be select().eq().maybeSingle(). This mock fakes it.
-                const mockLastQuery = (from(tableName).select(columns) as any)._lastQuery; // This is a fake property
-                 if (mockLastQuery && mockLastQuery.column) {
-                    const data = readTable(tableKey).find((row: any) => row[mockLastQuery.column] === mockLastQuery.value);
-                    return { data: data || null, error: null };
-                }
-                 console.warn("maybeSingle() mock called without a preceding .eq() - returning null");
-                return { data: null, error: null };
-            },
-            // Add a base select function if not chained
-            then: async (resolve: any) => {
-                 const data = readTable(tableKey);
-                 resolve({ data, error: null });
-            }
-        }),
+        select: (columns = '*', options = {}) => new MockQueryBuilder(tableName).select(columns, options),
 
-        insert: (newData: any) => {
-            const dataWithId = {
-                ...newData,
-                id: newData.id || generateUUID(),
-                created_at: new Date().toISOString(),
-            };
-            const table = readTable(tableKey);
-            table.push(dataWithId);
-            writeTable(tableKey, table);
-            return {
-                select: async () => ({ data: [dataWithId], error: null }),
-            };
-        },
+        insert: (newData: any) => ({
+            select: async () => {
+                const dataWithId = { ...newData, id: newData.id || generateUUID(), created_at: new Date().toISOString() };
+                const table = readTable(tableKey);
+                table.push(dataWithId);
+                writeTable(tableKey, table);
+                return { data: [dataWithId], error: null };
+            },
+        }),
         
         update: (updateData: any) => ({
             eq: async (column: string, value: any) => {
                 const table = readTable(tableKey);
-                let updated = false;
-                const newTable = table.map((row: any) => {
-                    if (row[column] === value) {
-                        updated = true;
-                        return { ...row, ...updateData };
-                    }
-                    return row;
-                });
-                if (updated) {
-                    writeTable(tableKey, newTable);
-                }
+                const newTable = table.map((row: any) => (row[column] === value) ? { ...row, ...updateData } : row);
+                writeTable(tableKey, newTable);
                 return { data: null, error: null };
             },
         }),
@@ -145,9 +192,7 @@ const from = (tableName: keyof typeof TABLE_KEYS) => {
             eq: async (column: string, value: any) => {
                 const table = readTable(tableKey);
                 const newTable = table.filter((row: any) => row[column] !== value);
-                if (newTable.length < table.length) {
-                    writeTable(tableKey, newTable);
-                }
+                writeTable(tableKey, newTable);
                 return { data: null, error: null };
             },
         }),
@@ -157,25 +202,19 @@ const from = (tableName: keyof typeof TABLE_KEYS) => {
                 single: async () => {
                     const table = readTable(tableKey);
                     const pkColumn = tableName === 'focus_notes' ? 'user_id' : 'id';
-                    
-                    const safeNewData = typeof newData === 'object' && newData ? newData : {};
-
-                    const existingIndex = (safeNewData[pkColumn] !== undefined)
-                        ? table.findIndex((row: any) => row && row[pkColumn] === safeNewData[pkColumn])
-                        : -1;
+                    const existingIndex = (newData[pkColumn] !== undefined) ? table.findIndex((row: any) => row && row[pkColumn] === newData[pkColumn]) : -1;
                     
                     let resultData;
                     if (existingIndex > -1) {
-                        const existingItem = table[existingIndex];
-                        // Using Object.assign ensures both are treated as objects before being merged.
-                        table[existingIndex] = { ...Object.assign({}, existingItem), ...Object.assign({}, safeNewData), updated_at: new Date().toISOString() };
+                        // FIX: Cast both existing and new data to `object` to prevent "Spread types may only be created from object types" error.
+                        table[existingIndex] = { ...(table[existingIndex] as object), ...(newData as object), updated_at: new Date().toISOString() };
                         resultData = table[existingIndex];
                     } else {
-                        const newEntry = { ...Object.assign({}, safeNewData), created_at: new Date().toISOString(), id: (newData as any)?.id || generateUUID() };
+                        // FIX: Cast `newData` to `object` to prevent "Spread types may only be created from object types" error.
+                        const newEntry = { ...(newData as object), created_at: new Date().toISOString(), id: (newData as any)?.id || generateUUID() };
                         table.push(newEntry);
                         resultData = newEntry;
                     }
-                    
                     writeTable(tableKey, table);
                     return { data: resultData, error: null };
                 }
@@ -183,111 +222,80 @@ const from = (tableName: keyof typeof TABLE_KEYS) => {
         }),
     };
 };
-// Add a passthrough for the base select call
-(from as any).select = async (columns = '*') => {
-    // This part is tricky to mock perfectly. Assuming a generic 'profiles' call if no table specified.
-    const data = readTable(TABLE_KEYS.profiles);
-    return { data, error: null };
-};
-
 
 const auth = {
     onAuthStateChange: (callback: (event: string, session: any) => void) => {
-        // Immediately call back with a mock session to auto-login, or null to show login page
-        setTimeout(() => {
-            if (MOCK_USER_SESSION) {
-                callback('SIGNED_IN', MOCK_USER_SESSION);
-            } else {
-                callback('SIGNED_OUT', null);
-            }
-        }, 0);
+        setTimeout(() => callback(MOCK_USER_SESSION ? 'SIGNED_IN' : 'SIGNED_OUT', MOCK_USER_SESSION), 0);
         return { data: { subscription: { unsubscribe: () => {} } } };
     },
-    getSession: async () => {
-        return { data: { session: MOCK_USER_SESSION } };
-    },
-    signOut: async () => {
-        // In local mode, sign out does nothing but allows the app to proceed.
-        // Reloading will just sign back in automatically.
-        return { error: null };
-    },
-    signInWithPassword: async ({ email, password }) => {
+    getSession: async () => ({ data: { session: MOCK_USER_SESSION } }),
+    signOut: async () => ({ error: null }),
+    signInWithPassword: async ({ email }) => {
         const user = MOCK_PROFILES.find(p => p.email.toLowerCase() === email.toLowerCase());
         if(user) {
             alert(`DEV MODE LOGIN:\nSuccessfully signed in as ${user.name}.\n\nThe page will now reload.`);
-            // A real app would check a password, here we just find the user
-            // To make this work, we'd need a way to tell the app which user to be on next load.
-            // For now, we'll just log and let the user manually change the switch.
-            console.log(`Login successful for ${user.name}. Please set CURRENT_MOCK_USER_ID to '${user.id}' in localStorageClient.ts and refresh.`);
+            localStorage.setItem(DEV_USER_OVERRIDE_KEY, user.id);
+            window.location.reload();
             return { error: null };
         }
-        return { error: { message: "User not found in mock data. Log in by changing the USER SWITCH at the top of localStorageClient.ts" } };
+        return { error: { message: "User not found in mock data. Use the Dev User Switcher instead." } };
     },
-    signUp: async ({ email, password }) => {
-        // This is a simplified signUp for user creation by an admin
-        const newUser = { id: generateUUID(), email, created_at: new Date().toISOString() };
-        return { data: { user: newUser }, error: null };
-    },
-    setSession: async ({ access_token, refresh_token }) => {
-        // No-op in mock mode
-        return { data: null, error: null };
-    },
-     resetPasswordForEmail: async (email: string, options: any) => {
+    signUp: async ({ email }) => ({ data: { user: { id: generateUUID(), email, created_at: new Date().toISOString() } }, error: null }),
+    setSession: async () => ({ data: null, error: null }),
+    resetPasswordForEmail: async (email: string) => {
         console.log(`Mock password reset requested for ${email}`);
         return { data: {}, error: null };
     },
-    updateUser: async ({ password }) => {
+    updateUser: async () => {
         console.log(`Mock user password updated.`);
         return { data: {}, error: null };
     }
 };
 
-// A small hack to make from('...').select() work as well as from('...').select().eq()
-const enhancedFrom = (tableName: keyof typeof TABLE_KEYS) => {
-    const baseFrom = from(tableName);
-    const originalSelect = baseFrom.select;
+const rpc = async (functionName: string, params: any) => {
+    if (functionName === 'get_task_stats_for_range') {
+        const { p_user_id, p_start_week, p_end_week } = params;
+        const allTasks = readTable<Task>(TABLE_KEYS.tasks);
 
-    (baseFrom as any).select = (columns = '*') => {
-        const selectResult = originalSelect(columns);
-        // Add a .then method to the result of select() to handle queries without .eq()
-        (selectResult as any).then = async (callback: any) => {
-            const data = readTable(TABLE_KEYS[tableName]);
-            callback({ data, error: null });
+        const tasksInRange = allTasks.filter(task => 
+            task.user_id === p_user_id &&
+            task.week_number >= p_start_week &&
+            task.week_number <= p_end_week
+        );
+
+        const stats: TaskStats = {
+            complete_count: 0,
+            incomplete_count: 0,
+            additional_count: 0,
+            total_tasks: 0,
+            total_time: 0,
+            complete_time: 0,
+            incomplete_time: 0,
+            additional_time: 0,
         };
 
-        (selectResult as any).maybeSingle = async () => {
-             console.warn("maybeSingle() mock called without a preceding .eq() - returning null");
-             return { data: null, error: null };
-        };
+        for (const task of tasksInRange) {
+            stats.total_tasks++;
+            const time = task.time_taken || 0;
+            stats.total_time += time;
 
-        const originalEq = selectResult.eq;
-        (selectResult as any).eq = (column: string, value: any) => {
-            const eqResultPromise = originalEq(column, value);
+            if (task.status === TaskStatus.Complete) {
+                stats.complete_count++;
+                stats.complete_time += time;
+            } else if (task.status === TaskStatus.Incomplete) {
+                stats.incomplete_count++;
+                stats.incomplete_time += time;
+            } else if (task.status === TaskStatus.Additional) {
+                stats.additional_count++;
+                stats.additional_time += time;
+            }
+        }
 
-            const builder = {
-                maybeSingle: () => {
-                    return eqResultPromise.then(eqResult => {
-                        if (eqResult.error) {
-                            return { data: null, error: eqResult.error };
-                        }
-                        return { data: eqResult.data?.length > 0 ? eqResult.data[0] : null, error: null };
-                    });
-                },
-                then: (onfulfilled: any, onrejected: any) => {
-                    return eqResultPromise.then(onfulfilled, onrejected);
-                },
-            };
+        return { data: stats, error: null };
+    }
 
-            return builder;
-        };
-        
-        return selectResult;
-    };
-    return baseFrom;
+    console.error(`Mock RPC function "${functionName}" is not implemented.`);
+    return { data: null, error: { message: `RPC function "${functionName}" not found.` } };
 };
 
-
-export const mockSupa = {
-    from: enhancedFrom,
-    auth,
-};
+export const mockSupa = { from, auth, rpc };
