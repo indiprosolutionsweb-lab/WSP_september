@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Day, Task, TaskStatus, Profile, Role, Company, FocusNote, UnplannedTask } from './types.ts';
 import { TOTAL_WEEKS } from './constants.ts';
 import { WeekSelector } from './components/WeekSelector.tsx';
@@ -37,6 +37,7 @@ const App: React.FC = () => {
     const [isTasksLoading, setIsTasksLoading] = useState<boolean>(true); // For user-specific task loading
     const [currentView, setCurrentView] = useState<'board' | 'dashboard' | 'focus' | 'management' | 'calendar' | 'upcoming' | 'tasks-list'>('board');
     const [isPasswordRecovery, setIsPasswordRecovery] = useState<boolean>(false);
+    const isPerformingAdminActionRef = useRef(false); // Ref to prevent session switch during admin actions
 
     // Derived state for calendar settings based on the user being viewed
     const viewingCompany = useMemo(() => {
@@ -47,6 +48,9 @@ const App: React.FC = () => {
     // Authentication
     useEffect(() => {
         const { data: { subscription } } = apiClient.auth.onAuthStateChange((event: string, session: any) => {
+             if (isPerformingAdminActionRef.current) {
+                return; // Ignore auth state changes during admin actions
+             }
              if (event === 'PASSWORD_RECOVERY') {
                 setIsPasswordRecovery(true);
             }
@@ -275,17 +279,47 @@ const App: React.FC = () => {
     };
 
     const handleCreateUser = async (newUser: { name: string; email: string; password: string; role: Role.User | Role.Admin; companyId: string | null }) => {
-        const { data: { session: adminSession } } = await apiClient.auth.getSession();
-        if (!adminSession) { alert("Session expired. Please log in again."); handleLogout(); return; }
-        const { data: signUpData, error: signUpError } = await apiClient.auth.signUp({ email: newUser.email, password: newUser.password });
-        const { error: sessionError } = await apiClient.auth.setSession({ access_token: adminSession.access_token, refresh_token: adminSession.refresh_token });
-        if (sessionError) { alert("Could not restore session. Please log in again."); handleLogout(); return; }
-        if (signUpError) { alert(`Failed to create user: ${signUpError.message}`); return; }
-        if (!signUpData.user) { alert("Unknown error during user creation."); return; }
-        const newProfile = { id: signUpData.user.id, name: newUser.name, email: newUser.email, role: newUser.role, company_id: newUser.companyId };
-        const { data: profileData, error: profileError } = await apiClient.from('profiles').insert(newProfile).select();
-        if (profileError) { alert(`Auth account created, but profile could not be saved: ${profileError.message}. Please delete user from Supabase Auth and try again.`); return; }
-        if (profileData) { setAllProfiles(prev => [...prev, profileData[0]]); alert(`Successfully created user: ${newUser.name}`); }
+        isPerformingAdminActionRef.current = true;
+        try {
+            const { data: { session: adminSession } } = await apiClient.auth.getSession();
+            if (!adminSession) {
+                alert("Session expired. Please log in again.");
+                handleLogout();
+                return;
+            }
+
+            const { data: signUpData, error: signUpError } = await apiClient.auth.signUp({ email: newUser.email, password: newUser.password });
+            
+            // Immediately restore the admin's session.
+            const { error: sessionError } = await apiClient.auth.setSession({ access_token: adminSession.access_token, refresh_token: adminSession.refresh_token });
+            if (sessionError) {
+                alert("Could not restore your admin session. Please log in again.");
+                handleLogout();
+                return;
+            }
+
+            if (signUpError) {
+                alert(`Failed to create user: ${signUpError.message}`);
+                return;
+            }
+            if (!signUpData.user) {
+                alert("Unknown error during user creation.");
+                return;
+            }
+
+            const newProfile = { id: signUpData.user.id, name: newUser.name, email: newUser.email, role: newUser.role, company_id: newUser.companyId };
+            const { data: profileData, error: profileError } = await apiClient.from('profiles').insert(newProfile).select();
+            if (profileError) {
+                alert(`Auth account created, but profile could not be saved: ${profileError.message}. Please delete user from Supabase Auth and try again.`);
+                return;
+            }
+            if (profileData) {
+                setAllProfiles(prev => [...prev, profileData[0]]);
+                alert(`Successfully created user: ${newUser.name}`);
+            }
+        } finally {
+            isPerformingAdminActionRef.current = false;
+        }
     };
 
     const permissions = useMemo(() => {
