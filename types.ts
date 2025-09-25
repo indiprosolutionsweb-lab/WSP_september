@@ -70,3 +70,14 @@ export interface FocusNote {
 export type WeekTasks = {
   [key in Day]?: Task[];
 };
+
+export interface TaskStats {
+  complete_count: number;
+  incomplete_count: number;
+  additional_count: number;
+  total_tasks: number;
+  total_time: number;
+  complete_time: number;
+  incomplete_time: number;
+  additional_time: number;
+}
