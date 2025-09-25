@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Day, Task, TaskStatus, Profile, Role, Company, FocusNote, UnplannedTask } from './types.ts';
 import { TOTAL_WEEKS } from './constants.ts';
@@ -22,9 +21,9 @@ import { TasksListView } from './components/TasksListView.tsx';
 
 const App: React.FC = () => {
     // Data states
-    const [profiles, setProfiles] = useState<Profile[]>([]);
+    const [allProfiles, setAllProfiles] = useState<Profile[]>([]);
     const [companies, setCompanies] = useState<Company[]>([]);
-    const [tasks, setTasks] = useState<Task[]>([]);
+    const [viewingUserTasks, setViewingUserTasks] = useState<Task[]>([]);
     const [unplannedTasks, setUnplannedTasks] = useState<UnplannedTask[]>([]);
     const [focusNote, setFocusNote] = useState<FocusNote | null>(null);
     
@@ -34,7 +33,8 @@ const App: React.FC = () => {
     const [viewingUser, setViewingUser] = useState<Profile | null>(null);
     const [currentWeek, setCurrentWeek] = useState<number>(1);
     const [weekRange, setWeekRange] = useState({ start: 1, end: 1 });
-    const [isLoaded, setIsLoaded] = useState<boolean>(false);
+    const [isLoaded, setIsLoaded] = useState<boolean>(false); // For initial profile/company load
+    const [isTasksLoading, setIsTasksLoading] = useState<boolean>(true); // For user-specific task loading
     const [currentView, setCurrentView] = useState<'board' | 'dashboard' | 'focus' | 'management' | 'calendar' | 'upcoming' | 'tasks-list'>('board');
     const [isPasswordRecovery, setIsPasswordRecovery] = useState<boolean>(false);
 
@@ -71,9 +71,9 @@ const App: React.FC = () => {
         }
     }, [viewingUser, companies]);
 
-    // Fetch data on session change
+    // Fetch initial non-task data on session change
     useEffect(() => {
-        const fetchAllData = async (userId: string) => {
+        const fetchInitialData = async (userId: string) => {
             try {
                 const { data: companyData, error: companyError } = await apiClient.from('companies').select('*');
                 if (companyError) throw companyError;
@@ -81,7 +81,7 @@ const App: React.FC = () => {
 
                 const { data: profileData, error: profileError } = await apiClient.from('profiles').select('*');
                 if (profileError) throw profileError;
-                setProfiles(profileData || []);
+                setAllProfiles(profileData || []);
                 
                 const userProfile = profileData?.find(p => p.id === userId);
                 if (userProfile) {
@@ -97,10 +97,6 @@ const App: React.FC = () => {
                     await apiClient.auth.signOut();
                 }
 
-                const { data: taskData, error: taskError } = await apiClient.from('tasks').select('*');
-                if (taskError) throw taskError;
-                setTasks(taskData || []);
-
                 // Fetch personal data only for the logged-in user
                 const { data: unplannedData, error: unplannedError } = await apiClient.from('unplanned_tasks').select('*').eq('user_id', userId);
                 if (unplannedError) throw unplannedError;
@@ -111,18 +107,42 @@ const App: React.FC = () => {
                 setFocusNote(focusData);
 
             } catch (error) {
-                console.error("Error fetching data:", error);
+                console.error("Error fetching initial data:", error);
             } finally {
                 setIsLoaded(true);
             }
         };
 
         if (session?.user) {
-            fetchAllData(session.user.id);
+            fetchInitialData(session.user.id);
         } else {
             setIsLoaded(true); 
         }
     }, [session]);
+
+    // Fetch tasks for the specific user being viewed
+    useEffect(() => {
+        const fetchTasksForUser = async (userId: string) => {
+            setIsTasksLoading(true);
+            try {
+                const { data, error } = await apiClient.from('tasks').select('*').eq('user_id', userId);
+                if (error) throw error;
+                setViewingUserTasks(data || []);
+            } catch (error) {
+                console.error("Error fetching tasks for user:", error);
+                setViewingUserTasks([]); // Clear tasks on error
+            } finally {
+                setIsTasksLoading(false);
+            }
+        };
+
+        if (viewingUser) {
+            fetchTasksForUser(viewingUser.id);
+        } else {
+            setViewingUserTasks([]); // Clear tasks if no user is being viewed
+            setIsTasksLoading(false);
+        }
+    }, [viewingUser]);
     
     const { financialYearStart, financialYearLabel } = useMemo(
         () => getFinancialYearDetailsForDate(new Date(), calendarStartMonth),
@@ -136,7 +156,7 @@ const App: React.FC = () => {
     };
 
     const handleSetViewingUser = (userId: string) => {
-        const userToView = profiles.find(p => p.id === userId);
+        const userToView = allProfiles.find(p => p.id === userId);
         if (userToView && currentUserProfile) {
             setViewingUser(userToView);
             
@@ -160,20 +180,24 @@ const App: React.FC = () => {
         const newTaskPayload = { user_id: userId, week_number: week, day: day, text: taskText, status: TaskStatus.Incomplete, time_taken: 0, is_priority: false };
         const { data, error } = await apiClient.from('tasks').insert(newTaskPayload).select();
         if (error) console.error("Error adding task:", error);
-        else if (data) setTasks(prev => [...prev, data[0] as Task]);
+        else if (data && viewingUser && userId === viewingUser.id) {
+             setViewingUserTasks(prev => [...prev, data[0] as Task]);
+        }
     };
     
     const handleUpdateTask = async (updatedTask: Task) => {
         const { id, ...updateData } = updatedTask;
         const { error } = await apiClient.from('tasks').update(updateData).eq('id', id);
         if (error) console.error("Error updating task:", error);
-        else setTasks(prev => prev.map(t => t.id === id ? updatedTask : t));
+        else if (viewingUser && updatedTask.user_id === viewingUser.id) {
+            setViewingUserTasks(prev => prev.map(t => t.id === id ? updatedTask : t));
+        }
     };
 
     const handleDeleteTask = async (taskId: string) => {
         const { error } = await apiClient.from('tasks').delete().eq('id', taskId);
         if (error) console.error("Error deleting task:", error);
-        else setTasks(prev => prev.filter(t => t.id !== taskId));
+        else setViewingUserTasks(prev => prev.filter(t => t.id !== taskId));
     };
 
     const handleAddUnplannedTask = async (text: string) => {
@@ -205,16 +229,17 @@ const App: React.FC = () => {
             alert("Could not plan the task. Please try again.");
             return;
         }
-        setTasks(prev => [...prev, data[0] as Task]);
+        if (viewingUser && taskToPlan.user_id === viewingUser.id) {
+            setViewingUserTasks(prev => [...prev, data[0] as Task]);
+        }
         await handleDeleteUnplannedTask(taskToPlan.id);
     };
 
     const handleDeleteUser = async (profileId: string) => {
         await apiClient.from('tasks').delete().eq('user_id', profileId);
         await apiClient.from('profiles').delete().eq('id', profileId);
-        setTasks(prev => prev.filter(t => t.user_id !== profileId));
-        const remainingProfiles = profiles.filter(p => p.id !== profileId);
-        setProfiles(remainingProfiles);
+        const remainingProfiles = allProfiles.filter(p => p.id !== profileId);
+        setAllProfiles(remainingProfiles);
         if (viewingUser?.id === profileId) setViewingUser(remainingProfiles.find(p => p.role !== Role.Superadmin) || null);
     };
     
@@ -228,11 +253,11 @@ const App: React.FC = () => {
         const { id, ...updateData } = profile;
         const { error } = await apiClient.from('profiles').update(updateData).eq('id', id);
         if (error) alert(`Error updating profile: ${error.message}`);
-        else setProfiles(prev => prev.map(p => p.id === id ? profile : p));
+        else setAllProfiles(prev => prev.map(p => p.id === id ? profile : p));
     };
 
     const handleDeleteCompany = async (companyId: string) => {
-        if (profiles.some(p => p.company_id === companyId)) {
+        if (allProfiles.some(p => p.company_id === companyId)) {
             alert("Cannot delete a company that still has users assigned to it.");
             return;
         }
@@ -260,7 +285,7 @@ const App: React.FC = () => {
         const newProfile = { id: signUpData.user.id, name: newUser.name, email: newUser.email, role: newUser.role, company_id: newUser.companyId };
         const { data: profileData, error: profileError } = await apiClient.from('profiles').insert(newProfile).select();
         if (profileError) { alert(`Auth account created, but profile could not be saved: ${profileError.message}. Please delete user from Supabase Auth and try again.`); return; }
-        if (profileData) { setProfiles(prev => [...prev, profileData[0]]); alert(`Successfully created user: ${newUser.name}`); }
+        if (profileData) { setAllProfiles(prev => [...prev, profileData[0]]); alert(`Successfully created user: ${newUser.name}`); }
     };
 
     const permissions = useMemo(() => {
@@ -268,11 +293,11 @@ const App: React.FC = () => {
         const isViewingOwnBoard = viewingUser ? currentUserProfile.id === viewingUser.id : false;
         const isSuperAdmin = currentUserProfile.role === Role.Superadmin;
         const isAdmin = currentUserProfile.role === Role.Admin;
-        const viewableUsers = profiles.filter(p => isSuperAdmin ? p.id !== currentUserProfile.id : isAdmin ? p.company_id === currentUserProfile.company_id : p.id === currentUserProfile.id);
+        const viewableUsers = allProfiles.filter(p => isSuperAdmin ? p.id !== currentUserProfile.id : isAdmin ? p.company_id === currentUserProfile.company_id : p.id === currentUserProfile.id);
         const isAdminViewingCompanyUser = isAdmin && viewingUser && viewingUser.company_id === currentUserProfile.company_id && !isViewingOwnBoard;
         const isSuperAdminViewingAnyone = isSuperAdmin && viewingUser && viewingUser.id !== currentUserProfile.id;
         return { canEditTasks: isViewingOwnBoard, canAddTask: isViewingOwnBoard || isAdminViewingCompanyUser || isSuperAdminViewingAnyone, canManageUsers: isSuperAdmin, viewableUsers };
-    }, [currentUserProfile, viewingUser, profiles]);
+    }, [currentUserProfile, viewingUser, allProfiles]);
 
     const footerText = useMemo(() => {
         if (currentView === 'upcoming') return "You are viewing your upcoming tasks. This is only visible to you.";
@@ -283,6 +308,25 @@ const App: React.FC = () => {
         if (currentView === 'dashboard') return `Viewing analysis for Weeks ${weekRange.start}-${weekRange.end} for ${viewingUser.name}.`;
         return `You are viewing Week ${currentWeek} / ${TOTAL_WEEKS} for ${viewingUser.name}.`;
     }, [currentView, currentWeek, weekRange, viewingUser]);
+    
+    const renderContent = () => {
+        if (isTasksLoading && viewingUser) {
+            return <div className="flex-grow flex items-center justify-center text-xl text-slate-400">Loading tasks for {viewingUser.name}...</div>;
+        }
+        if (currentView === 'upcoming') return <UnplannedTasksView unplannedTasks={unplannedTasks} onAddTask={handleAddUnplannedTask} onUpdateTask={handleUpdateUnplannedTask} onDeleteTask={handleDeleteUnplannedTask} onPlanTask={handlePlanTask} currentWeek={currentWeek} />;
+        if (currentView === 'focus') return <FocusView note={focusNote} onSave={handleUpdateFocusNote} />;
+        if (currentView === 'management' && permissions.canManageUsers) return <ManagementView companies={companies} currentUser={currentUserProfile} onAddCompany={handleAddCompany} onDeleteCompany={handleDeleteCompany} onUpdateUserProfile={handleUpdateUserProfile} onDeleteUser={handleDeleteUser} onCreateUser={handleCreateUser} />;
+        if (currentView === 'tasks-list' && viewingUser) return <TasksListView userTasks={viewingUserTasks} viewingUser={viewingUser} initialWeek={currentWeek} />;
+        if (currentUserProfile.role === Role.Superadmin && !viewingUser) return <div className="flex flex-col flex-grow items-center justify-center"><div className="text-center p-10 bg-slate-800/50 rounded-xl"><h2 className="text-2xl font-bold text-slate-300">Welcome, Super Admin!</h2><p className="mt-4 text-slate-400">There are no other users to view. Go to 'Management' to add companies and users.</p></div></div>;
+        if (!viewingUser) return <div className="flex items-center justify-center h-full text-2xl font-semibold text-slate-400">Loading user data...</div>;
+        
+        return <>
+            {currentView === 'board' && <TaskBoard currentWeek={currentWeek} tasks={viewingUserTasks} onAddTask={(week, day, text) => handleAddTask(viewingUser.id, week, day, text)} onUpdateTask={handleUpdateTask} onDeleteTask={handleDeleteTask} canEditTasks={permissions.canEditTasks} canAddTask={permissions.canAddTask} />}
+            {currentView === 'dashboard' && <Dashboard startWeek={weekRange.start} endWeek={weekRange.end} viewingUser={viewingUser} />}
+            {currentView === 'calendar' && <YearCalendarView financialYearStartDate={financialYearStart} financialYearString={financialYearLabel} />}
+        </>;
+    }
+
 
     if (!isLoaded) return <div className="flex items-center justify-center h-screen text-2xl font-semibold text-slate-400">Loading WSP...</div>;
     if (!session?.user) return <>{isPasswordRecovery ? <ResetPasswordPage onResetSuccess={() => setIsPasswordRecovery(false)} /> : <LoginPage />}{DEV_MODE && <DevUserSwitcher />}</>;
@@ -293,7 +337,7 @@ const App: React.FC = () => {
             <Header
                 currentUser={currentUserProfile}
                 viewingUser={viewingUser}
-                allProfiles={profiles}
+                allProfiles={allProfiles}
                 companies={companies}
                 viewableUsers={permissions.viewableUsers}
                 onLogout={handleLogout}
@@ -308,22 +352,12 @@ const App: React.FC = () => {
                         <div className="relative flex flex-col sm:flex-row flex-wrap items-center justify-center bg-slate-800/50 rounded-lg mb-4 p-1 gap-2">
                             {currentView === 'board' ? <WeekSelector currentWeek={currentWeek} setCurrentWeek={setCurrentWeek} /> : <WeekRangeSelector weekRange={weekRange} setWeekRange={setWeekRange} />}
                             <div className="sm:absolute sm:right-2 sm:top-1/2 sm:-translate-y-1/2">
-                                <DownloadTasks allTasks={tasks.filter(t => t.user_id === viewingUser.id)} viewingUser={viewingUser} initialStartWeek={currentView === 'board' ? currentWeek : weekRange.start} initialEndWeek={currentView === 'board' ? currentWeek : weekRange.end} />
+                                <DownloadTasks allTasks={viewingUserTasks} viewingUser={viewingUser} initialStartWeek={currentView === 'board' ? currentWeek : weekRange.start} initialEndWeek={currentView === 'board' ? currentWeek : weekRange.end} />
                             </div>
                         </div>
                     )}
                 </div>
-                {currentView === 'upcoming' ? <UnplannedTasksView unplannedTasks={unplannedTasks} onAddTask={handleAddUnplannedTask} onUpdateTask={handleUpdateUnplannedTask} onDeleteTask={handleDeleteUnplannedTask} onPlanTask={handlePlanTask} currentWeek={currentWeek} />
-                : currentView === 'focus' ? <FocusView note={focusNote} onSave={handleUpdateFocusNote} />
-                : currentView === 'management' && permissions.canManageUsers ? <ManagementView profiles={profiles} companies={companies} currentUser={currentUserProfile} onAddCompany={handleAddCompany} onDeleteCompany={handleDeleteCompany} onUpdateUserProfile={handleUpdateUserProfile} onDeleteUser={handleDeleteUser} onCreateUser={handleCreateUser} />
-                : currentView === 'tasks-list' && viewingUser ? <TasksListView userTasks={tasks.filter(t => t.user_id === viewingUser.id)} viewingUser={viewingUser} initialWeek={currentWeek} />
-                : currentUserProfile.role === Role.Superadmin && !viewingUser ? <div className="flex flex-col flex-grow items-center justify-center"><div className="text-center p-10 bg-slate-800/50 rounded-xl"><h2 className="text-2xl font-bold text-slate-300">Welcome, Super Admin!</h2><p className="mt-4 text-slate-400">There are no other users to view. Go to 'Management' to add companies and users.</p></div></div>
-                : !viewingUser ? <div className="flex items-center justify-center h-full text-2xl font-semibold text-slate-400">Loading user data...</div>
-                : <>
-                    {currentView === 'board' && <TaskBoard currentWeek={currentWeek} tasks={tasks.filter(t => t.user_id === viewingUser.id)} onAddTask={(week, day, text) => handleAddTask(viewingUser.id, week, day, text)} onUpdateTask={handleUpdateTask} onDeleteTask={handleDeleteTask} canEditTasks={permissions.canEditTasks} canAddTask={permissions.canAddTask} />}
-                    {currentView === 'dashboard' && <Dashboard startWeek={weekRange.start} endWeek={weekRange.end} userTasks={tasks.filter(t => t.user_id === viewingUser.id)} viewingUser={viewingUser} />}
-                    {currentView === 'calendar' && <YearCalendarView financialYearStartDate={financialYearStart} financialYearString={financialYearLabel} />}
-                </>}
+                {renderContent()}
             </main>
             <footer className="flex items-center justify-between py-4 text-slate-500 text-sm mt-auto border-t border-slate-800">
                 <p>{footerText}</p>
