@@ -11,36 +11,50 @@ const useDebounce = (callback: (...args: any[]) => void, delay: number) => {
     };
 };
 
-const StatusSelector: React.FC<{ status: FocusItemStatus; onSelect: (status: FocusItemStatus) => void; }> = ({ status, onSelect }) => {
-    const [isOpen, setIsOpen] = useState(false);
-    const wrapperRef = useRef<HTMLDivElement>(null);
-    const colors: { [key in FocusItemStatus]: string } = { 'red': 'bg-red-500', 'yellow': 'bg-yellow-400', 'green': 'bg-green-500', 'none': 'bg-slate-600 border-2 border-slate-500' };
-    const statusLabels: { [key in FocusItemStatus]: string } = { green: 'Green', yellow: 'Yellow', red: 'Red', none: 'Clear' };
-    const statusOptions: FocusItemStatus[] = ['green', 'yellow', 'red'];
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => { if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) setIsOpen(false); };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
-    return (
-        <div className="relative" ref={wrapperRef}>
-            <button onClick={() => setIsOpen(p => !p)} className={`w-5 h-5 rounded-full shrink-0 transition-transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-800 focus:ring-blue-500 ${colors[status]}`} aria-label={`Status: ${status}.`} />
-            {isOpen && (
-                <div className="absolute z-10 top-full mt-2 right-0 bg-slate-900 border border-slate-700 rounded-lg p-1 flex flex-col gap-1 shadow-lg w-32">
-                    {statusOptions.map(s => <button key={s} onClick={() => { onSelect(s); setIsOpen(false); }} className="flex items-center gap-2 w-full text-left p-1.5 rounded-md text-slate-200 hover:bg-slate-700"><span className={`w-4 h-4 rounded-full ${colors[s]}`} /><span>{statusLabels[s]}</span></button>)}
-                    <div className="border-t border-slate-700/50 my-1" />
-                    <button onClick={() => { onSelect('none'); setIsOpen(false); }} className="flex items-center gap-2 w-full text-left p-1.5 rounded-md text-slate-400 hover:bg-slate-700"><div className={`w-4 h-4 rounded-full ${colors['none']} flex items-center justify-center`}><svg className="w-3 h-3 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></div><span>{statusLabels['none']}</span></button>
-                </div>
-            )}
-        </div>
-    );
-};
-
 export const FocusView: React.FC<{ note: FocusNote | null; onSave: (note: { focus_text: string | null; pointers_text: string | null; }) => void; }> = ({ note, onSave }) => {
     const [focusItems, setFocusItems] = useState<FocusItem[]>([]);
     const [pointersText, setPointersText] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const isInitialMount = useRef(true);
+
+    const StatusSelector: React.FC<{ status: FocusItemStatus; onSelect: (status: FocusItemStatus) => void; }> = ({ status, onSelect }) => {
+        const [isOpen, setIsOpen] = useState(false);
+        const wrapperRef = useRef<HTMLDivElement>(null);
+        const colors: { [key in FocusItemStatus]: string } = { 'red': 'bg-red-500 hover:bg-red-400', 'yellow': 'bg-yellow-400 hover:bg-yellow-300', 'green': 'bg-green-500 hover:bg-green-400', 'none': 'bg-slate-600 hover:bg-slate-500' };
+        const statusLabels: { [key in FocusItemStatus]: string } = { green: 'Green', yellow: 'Yellow', red: 'Red', none: 'Clear' };
+        const statusOptions: FocusItemStatus[] = ['green', 'yellow', 'red', 'none'];
+
+        useEffect(() => {
+            const handleClickOutside = (event: MouseEvent) => { if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) setIsOpen(false); };
+            document.addEventListener('mousedown', handleClickOutside);
+            return () => document.removeEventListener('mousedown', handleClickOutside);
+        }, []);
+
+        return (
+            <div className="relative flex items-center" ref={wrapperRef}>
+                {isOpen && (
+                    <div className="absolute right-full mr-2 top-1/2 -translate-y-1/2 bg-slate-900 border border-slate-700 rounded-full p-1.5 flex items-center gap-2 shadow-lg z-10">
+                        {statusOptions.map(s => 
+                            <button 
+                                key={s} 
+                                onClick={() => { onSelect(s); setIsOpen(false); }} 
+                                className={`w-5 h-5 rounded-full transition-transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-blue-500 ${colors[s]}`}
+                                title={`Set status to ${statusLabels[s]}`}
+                                aria-label={`Set status to ${statusLabels[s]}`}
+                            >
+                                {s === 'none' && <svg className="w-5 h-5 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>}
+                            </button>
+                        )}
+                    </div>
+                )}
+                <button 
+                    onClick={() => setIsOpen(p => !p)}
+                    className={`w-5 h-5 rounded-full shrink-0 transition-transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-800 focus:ring-blue-500 ${colors[status]}`} 
+                    aria-label={`Current status: ${statusLabels[status]}. Click to change.`} 
+                />
+            </div>
+        );
+    };
 
     useEffect(() => {
         if (note) {
