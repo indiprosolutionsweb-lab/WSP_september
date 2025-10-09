@@ -14,6 +14,7 @@ export const MOCK_SUPERADMIN_USER: Profile = {
 export const MOCK_COMPANIES: Company[] = [
     { id: 'company-a', name: 'Innovate Inc.', created_at: new Date().toISOString(), calendar_start_month: 'April' },
     { id: 'company-b', name: 'Synergy Solutions', created_at: new Date().toISOString(), calendar_start_month: 'January' },
+    { id: 'company-decathlon', name: 'Decathlon', created_at: new Date().toISOString(), calendar_start_month: 'January' },
 ];
 
 export const MOCK_PROFILES: Profile[] = [
@@ -24,6 +25,7 @@ export const MOCK_PROFILES: Profile[] = [
     { id: 'admin-002', name: 'Diana Director', email: 'diana@synergy.local', role: Role.Admin, company_id: 'company-b' },
     { id: 'user-003', name: 'Eve Employee', email: 'eve@synergy.local', role: Role.User, company_id: 'company-b' },
     { id: 'user-004', name: 'Frank Field', email: 'frank@unassigned.local', role: Role.User, company_id: null },
+    { id: 'user-decathlon-01', name: 'David Deca', email: 'david@decathlon.local', role: Role.User, company_id: 'company-decathlon' },
     // Added for pagination testing
     { id: 'user-a-01', name: 'Grace Green', email: 'grace@innovate.local', role: Role.User, company_id: 'company-a' },
     { id: 'user-a-02', name: 'Henry Hopper', email: 'henry@innovate.local', role: Role.User, company_id: 'company-a' },
@@ -57,9 +59,13 @@ const generateDynamicMockTasks = (): Task[] => {
     const today = new Date();
     const aprilStartWeek = getWeekNumber(today, 'April');
     const januaryStartWeek = getWeekNumber(today, 'January');
+    const decathlonStartWeek = getWeekNumber(today, 'January', 'Decathlon');
+
 
     const innovateWeeks = [aprilStartWeek - 1, aprilStartWeek, aprilStartWeek + 1];
     const synergyWeeks = [januaryStartWeek - 1, januaryStartWeek, januaryStartWeek + 1];
+    const decathlonWeeks = [decathlonStartWeek - 1, decathlonStartWeek, decathlonStartWeek + 1];
+
 
     let tasks: Task[] = [
         // Bob Builder (user-001)
@@ -77,6 +83,10 @@ const generateDynamicMockTasks = (): Task[] => {
         // Frank Field (user-004)
         { id: 'task-frank-curr-1', user_id: 'user-004', week_number: innovateWeeks[1], day: 'Monday', text: 'Update Salesforce with new contacts.', status: TaskStatus.Complete, time_taken: 45, is_priority: false, created_at: new Date().toISOString() },
         { id: 'task-frank-curr-2', user_id: 'user-004', week_number: innovateWeeks[1], day: 'Wednesday', text: 'Present Q2 marketing plan to management.', status: TaskStatus.Incomplete, time_taken: 0, is_priority: true, created_at: new Date().toISOString() },
+
+        // David Deca (user-decathlon-01)
+        { id: 'task-david-deca-1', user_id: 'user-decathlon-01', week_number: decathlonWeeks[1], day: 'Monday', text: 'Analyze weekly sales data.', status: TaskStatus.Incomplete, time_taken: 0, is_priority: true, created_at: new Date().toISOString() },
+        { id: 'task-david-deca-2', user_id: 'user-decathlon-01', week_number: decathlonWeeks[1], day: 'Friday', text: 'Plan next week\'s inventory check.', status: TaskStatus.Incomplete, time_taken: 0, is_priority: false, created_at: new Date().toISOString() },
 
         // Add some tasks for new users to test switching
         { id: 'task-grace-1', user_id: 'user-a-01', week_number: innovateWeeks[1], day: 'Monday', text: 'Review Q3 budget proposals.', status: TaskStatus.Incomplete, time_taken: 0, is_priority: true, created_at: new Date().toISOString() },
