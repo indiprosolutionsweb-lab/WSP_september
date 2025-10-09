@@ -31,11 +31,31 @@ const App: React.FC = () => {
     const [session, setSession] = useState<any | null>(null);
     const [currentUserProfile, setCurrentUserProfile] = useState<Profile | null>(null);
     const [viewingUser, setViewingUser] = useState<Profile | null>(null);
-    const [currentWeek, setCurrentWeek] = useState<number>(1);
-    const [weekRange, setWeekRange] = useState({ start: 1, end: 1 });
+    
+    // Persisted states
+    const [currentView, setCurrentView] = useState<'board' | 'dashboard' | 'focus' | 'management' | 'calendar' | 'upcoming' | 'tasks-list'>(() => {
+        const saved = sessionStorage.getItem('wsp_current_view');
+        const validViews = ['board', 'dashboard', 'focus', 'management', 'calendar', 'upcoming', 'tasks-list'];
+        return (saved && validViews.includes(saved) ? saved : 'board') as 'board' | 'dashboard' | 'focus' | 'management' | 'calendar' | 'upcoming' | 'tasks-list';
+    });
+    
+    const [currentWeek, setCurrentWeek] = useState<number>(() => {
+        const saved = sessionStorage.getItem('wsp_current_week');
+        return saved ? parseInt(saved, 10) : 0; // Use 0 as a sentinel for "not yet calculated"
+    });
+
+    const [weekRange, setWeekRange] = useState(() => {
+        const saved = sessionStorage.getItem('wsp_week_range');
+        if (saved) {
+            try { return JSON.parse(saved); } catch (e) { /* ignore corrupted data */ }
+        }
+        const savedWeek = sessionStorage.getItem('wsp_current_week');
+        const week = savedWeek ? parseInt(savedWeek, 10) : 1;
+        return { start: week, end: week };
+    });
+
     const [isLoaded, setIsLoaded] = useState<boolean>(false); // For initial profile/company load
     const [isTasksLoading, setIsTasksLoading] = useState<boolean>(true); // For user-specific task loading
-    const [currentView, setCurrentView] = useState<'board' | 'dashboard' | 'focus' | 'management' | 'calendar' | 'upcoming' | 'tasks-list'>('board');
     const [isPasswordRecovery, setIsPasswordRecovery] = useState<boolean>(false);
     const isPerformingAdminActionRef = useRef(false); // Ref to prevent session switch during admin actions
 
@@ -63,17 +83,38 @@ const App: React.FC = () => {
 
         return () => subscription.unsubscribe();
     }, []);
-
-    // Sync current week with the viewing user's calendar system
+    
+    // State persistence effects
     useEffect(() => {
-        if (viewingUser && companies.length > 0) {
+        if (currentWeek > 0) {
+            sessionStorage.setItem('wsp_current_week', currentWeek.toString());
+        }
+    }, [currentWeek]);
+
+    useEffect(() => {
+        if (viewingUser) {
+            sessionStorage.setItem('wsp_viewing_user_id', viewingUser.id);
+        }
+    }, [viewingUser]);
+
+    useEffect(() => {
+        sessionStorage.setItem('wsp_week_range', JSON.stringify(weekRange));
+    }, [weekRange]);
+
+    useEffect(() => {
+        sessionStorage.setItem('wsp_current_view', currentView);
+    }, [currentView]);
+
+    // Calculate initial week only if not already set from session storage
+    useEffect(() => {
+        if (currentWeek === 0 && viewingUser && companies.length > 0) {
             const userCompany = companies.find(c => c.id === viewingUser.company_id);
             const userCalendarStart = userCompany?.calendar_start_month || 'April';
-            const newCurrentWeek = getWeekNumber(new Date(), userCalendarStart);
+            const newCurrentWeek = getWeekNumber(new Date(), userCalendarStart, userCompany?.name);
             setCurrentWeek(newCurrentWeek);
             setWeekRange({ start: newCurrentWeek, end: newCurrentWeek });
         }
-    }, [viewingUser, companies]);
+    }, [viewingUser, companies, currentWeek]);
 
     // Fetch initial non-task data on session change
     useEffect(() => {
@@ -90,12 +131,38 @@ const App: React.FC = () => {
                 const userProfile = profileData?.find(p => p.id === userId);
                 if (userProfile) {
                      setCurrentUserProfile(userProfile);
-                     if (userProfile.role === Role.Superadmin) {
-                        const firstUserToView = profileData.find(p => p.id !== userProfile.id);
-                        setViewingUser(firstUserToView || null);
-                    } else {
-                        setViewingUser(userProfile);
-                    }
+
+                     // --- START: MODIFIED USER VIEWING LOGIC ---
+                     const savedViewingUserId = sessionStorage.getItem('wsp_viewing_user_id');
+                     const isSuperAdmin = userProfile.role === Role.Superadmin;
+                     const isAdmin = userProfile.role === Role.Admin;
+
+                     const potentialUserToView = savedViewingUserId ? profileData.find(p => p.id === savedViewingUserId) : undefined;
+                     
+                     let userIsValidAndPermitted = false;
+                     if (potentialUserToView) {
+                        if (isSuperAdmin) {
+                            userIsValidAndPermitted = true;
+                        } else if (isAdmin) {
+                            userIsValidAndPermitted = potentialUserToView.company_id === userProfile.company_id;
+                        } else { // is User
+                            userIsValidAndPermitted = potentialUserToView.id === userProfile.id;
+                        }
+                     }
+
+                     if (potentialUserToView && userIsValidAndPermitted) {
+                        setViewingUser(potentialUserToView);
+                     } else {
+                        // Fallback logic
+                        if (isSuperAdmin) {
+                            const firstUserToView = profileData.find(p => p.id !== userProfile.id);
+                            setViewingUser(firstUserToView || null);
+                        } else {
+                            setViewingUser(userProfile);
+                        }
+                     }
+                     // --- END: MODIFIED USER VIEWING LOGIC ---
+
                 } else {
                     console.error("Current user's profile not found!");
                     await apiClient.auth.signOut();
@@ -149,11 +216,15 @@ const App: React.FC = () => {
     }, [viewingUser]);
     
     const { financialYearStart, financialYearLabel } = useMemo(
-        () => getFinancialYearDetailsForDate(new Date(), calendarStartMonth),
-        [calendarStartMonth]
+        () => getFinancialYearDetailsForDate(new Date(), calendarStartMonth, viewingCompany?.name),
+        [calendarStartMonth, viewingCompany]
     );
 
     const handleLogout = async () => {
+        sessionStorage.removeItem('wsp_current_week');
+        sessionStorage.removeItem('wsp_week_range');
+        sessionStorage.removeItem('wsp_current_view');
+        sessionStorage.removeItem('wsp_viewing_user_id');
         await apiClient.auth.signOut();
         setSession(null);
         setCurrentUserProfile(null);
@@ -163,6 +234,17 @@ const App: React.FC = () => {
         const userToView = allProfiles.find(p => p.id === userId);
         if (userToView && currentUserProfile) {
             setViewingUser(userToView);
+            
+            // When switching users, recalculate the current week based on the new user's company calendar.
+            const userCompany = companies.find(c => c.id === userToView.company_id);
+            const userCalendarStart = userCompany?.calendar_start_month || 'April'; // Default to April if no company
+            const newCurrentWeek = getWeekNumber(new Date(), userCalendarStart, userCompany?.name);
+            setCurrentWeek(newCurrentWeek);
+
+            // Also reset the dashboard range to the new current week
+            if (currentView === 'dashboard') {
+                setWeekRange({ start: newCurrentWeek, end: newCurrentWeek });
+            }
             
             if (userToView.id !== currentUserProfile.id) {
                 const personalViews: typeof currentView[] = ['tasks-list', 'focus', 'upcoming'];
@@ -181,11 +263,36 @@ const App: React.FC = () => {
     };
 
     const handleAddTask = async (userId: string, week: number, day: Day, taskText: string) => {
+        // Optimistic Update for faster UI response
+        if (!viewingUser || userId !== viewingUser.id) return;
+
+        const tempId = `temp-${crypto.randomUUID()}`;
+        const optimisticTask: Task = {
+            id: tempId,
+            user_id: userId,
+            week_number: week,
+            day: day,
+            text: taskText,
+            status: TaskStatus.Incomplete,
+            time_taken: 0,
+            is_priority: false,
+            created_at: new Date().toISOString(),
+        };
+
+        setViewingUserTasks(prev => [...prev, optimisticTask]);
+
         const newTaskPayload = { user_id: userId, week_number: week, day: day, text: taskText, status: TaskStatus.Incomplete, time_taken: 0, is_priority: false };
         const { data, error } = await apiClient.from('tasks').insert(newTaskPayload).select();
-        if (error) console.error("Error adding task:", error);
-        else if (data && viewingUser && userId === viewingUser.id) {
-             setViewingUserTasks(prev => [...prev, data[0] as Task]);
+        
+        if (error) {
+            console.error("Error adding task:", error);
+            alert("Failed to add the task. Please try again.");
+            // Rollback on error
+            setViewingUserTasks(prev => prev.filter(t => t.id !== tempId));
+        } else if (data) {
+            // Replace temporary task with real one from DB
+            const savedTask = data[0] as Task;
+            setViewingUserTasks(prev => prev.map(t => t.id === tempId ? savedTask : t));
         }
     };
     
