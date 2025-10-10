@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Day, Task, TaskStatus, Profile, Role, Company, FocusNote, UnplannedTask } from './types.ts';
 import { TOTAL_WEEKS } from './constants.ts';
@@ -263,7 +264,6 @@ const App: React.FC = () => {
     };
 
     const handleAddTask = async (userId: string, week: number, day: Day, taskText: string) => {
-        // Pessimistic Update: Wait for the database operation to complete.
         if (!viewingUser || userId !== viewingUser.id) return;
 
         const newTaskPayload = { 
@@ -281,6 +281,7 @@ const App: React.FC = () => {
         if (error) {
             console.error("Error adding task:", error);
             alert("Failed to add the task. Please check your connection and try again.");
+            throw error;
         } else if (data) {
             const savedTask = data[0] as Task;
             setViewingUserTasks(prev => [...prev, savedTask]);
