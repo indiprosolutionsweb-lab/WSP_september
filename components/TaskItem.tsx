@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Task, TaskStatus } from '../types.ts';
 import { TrashIcon, StarIcon } from './icons.tsx';
 import { isTimeTrackingEnabled } from '../constants.ts';
@@ -21,6 +21,16 @@ export const TaskItem: React.FC<TaskItemProps> = ({ task, onUpdateTask, onDelete
     const [isExpanded, setIsExpanded] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [editText, setEditText] = useState(task.text);
+    const [isNewlyAdded, setIsNewlyAdded] = useState(false);
+
+    useEffect(() => {
+        const createdAt = new Date(task.created_at);
+        const now = new Date();
+        // If the task was created in the last 2 seconds, animate it in.
+        if (now.getTime() - createdAt.getTime() < 2000) {
+            setIsNewlyAdded(true);
+        }
+    }, [task.created_at]);
 
     const handleDoubleClick = () => {
         if (!canEdit) return;
@@ -68,7 +78,7 @@ export const TaskItem: React.FC<TaskItemProps> = ({ task, onUpdateTask, onDelete
 
     return (
         <div 
-            className={`p-1.5 bg-slate-800 rounded-lg shadow-md mb-1.5 flex flex-col transition-all duration-200 hover:bg-slate-700/80 ${isEditing ? 'cursor-default' : 'cursor-pointer'} ${statusStyles[task.status].border} ${task.is_priority ? 'ring-2 ring-yellow-500/50' : ''}`}
+            className={`p-1.5 bg-slate-800 rounded-lg shadow-md mb-1.5 flex flex-col transition-all duration-200 hover:bg-slate-700/80 ${isEditing ? 'cursor-default' : 'cursor-pointer'} ${statusStyles[task.status].border} ${task.is_priority ? 'ring-2 ring-yellow-500/50' : ''} ${isNewlyAdded ? 'animate-task-in' : ''}`}
             onClick={() => !isEditing && setIsExpanded(prev => !prev)}
             onDoubleClick={handleDoubleClick}
             aria-expanded={isExpanded}
