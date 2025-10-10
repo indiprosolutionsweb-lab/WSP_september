@@ -263,36 +263,27 @@ const App: React.FC = () => {
     };
 
     const handleAddTask = async (userId: string, week: number, day: Day, taskText: string) => {
-        // Optimistic Update for faster UI response
+        // Pessimistic Update: Wait for the database operation to complete.
         if (!viewingUser || userId !== viewingUser.id) return;
 
-        const tempId = `temp-${crypto.randomUUID()}`;
-        const optimisticTask: Task = {
-            id: tempId,
-            user_id: userId,
-            week_number: week,
-            day: day,
-            text: taskText,
-            status: TaskStatus.Incomplete,
-            time_taken: 0,
-            is_priority: false,
-            created_at: new Date().toISOString(),
+        const newTaskPayload = { 
+            user_id: userId, 
+            week_number: week, 
+            day: day, 
+            text: taskText, 
+            status: TaskStatus.Incomplete, 
+            time_taken: 0, 
+            is_priority: false 
         };
 
-        setViewingUserTasks(prev => [...prev, optimisticTask]);
-
-        const newTaskPayload = { user_id: userId, week_number: week, day: day, text: taskText, status: TaskStatus.Incomplete, time_taken: 0, is_priority: false };
         const { data, error } = await apiClient.from('tasks').insert(newTaskPayload).select();
         
         if (error) {
             console.error("Error adding task:", error);
-            alert("Failed to add the task. Please try again.");
-            // Rollback on error
-            setViewingUserTasks(prev => prev.filter(t => t.id !== tempId));
+            alert("Failed to add the task. Please check your connection and try again.");
         } else if (data) {
-            // Replace temporary task with real one from DB
             const savedTask = data[0] as Task;
-            setViewingUserTasks(prev => prev.map(t => t.id === tempId ? savedTask : t));
+            setViewingUserTasks(prev => [...prev, savedTask]);
         }
     };
     
