@@ -7,7 +7,7 @@ import { DayColumn } from './DayColumn.tsx';
 interface TaskBoardProps {
     currentWeek: number;
     tasks: Task[]; // Now a flat array of all tasks for the viewing user
-    onAddTask: (week: number, day: Day, taskText: string) => void;
+    onAddTask: (week: number, day: Day, taskText: string) => Promise<void>;
     onUpdateTask: (updatedTask: Task) => void;
     onDeleteTask: (taskId: string) => void;
     canEditTasks: boolean;
