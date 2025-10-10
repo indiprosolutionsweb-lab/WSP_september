@@ -2,12 +2,12 @@
 import React, { useState } from 'react';
 import { Day, Task } from '../types.ts';
 import { TaskItem } from './TaskItem.tsx';
-import { PlusIcon } from './icons.tsx';
+import { PlusIcon, SpinnerIcon } from './icons.tsx';
 
 interface DayColumnProps {
     day: Day;
     tasks: Task[];
-    onAddTask: (day: Day, taskText: string) => void;
+    onAddTask: (day: Day, taskText: string) => Promise<void>;
     onUpdateTask: (updatedTask: Task) => void;
     onDeleteTask: (taskId: string) => void;
     canEditTasks: boolean;
@@ -16,11 +16,21 @@ interface DayColumnProps {
 
 export const DayColumn: React.FC<DayColumnProps> = ({ day, tasks, onAddTask, onUpdateTask, onDeleteTask, canEditTasks, canAddTask }) => {
     const [newTaskText, setNewTaskText] = useState('');
+    const [isAdding, setIsAdding] = useState(false);
 
-    const handleAddTask = () => {
-        if (newTaskText.trim()) {
-            onAddTask(day, newTaskText.trim());
-            setNewTaskText('');
+    const handleAddTask = async () => {
+        if (newTaskText.trim() && !isAdding) {
+            setIsAdding(true);
+            try {
+                await onAddTask(day, newTaskText.trim());
+                setNewTaskText('');
+            } catch (error) {
+                // Error is handled in App.tsx with an alert.
+                // Input text is preserved for the user to retry.
+                console.info("Task add failed, preserving input for user.");
+            } finally {
+                setIsAdding(false);
+            }
         }
     };
 
@@ -52,14 +62,16 @@ export const DayColumn: React.FC<DayColumnProps> = ({ day, tasks, onAddTask, onU
                         onChange={(e) => setNewTaskText(e.target.value)}
                         onKeyDown={handleKeyDown}
                         placeholder="Add task..."
-                        className="min-w-0 flex-grow bg-slate-700 border border-slate-600 rounded-lg px-2 py-1.5 text-sm text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        disabled={isAdding}
+                        className="min-w-0 flex-grow bg-slate-700 border border-slate-600 rounded-lg px-2 py-1.5 text-sm text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-wait"
                     />
                     <button
                         onClick={handleAddTask}
-                        className="bg-blue-600 hover:bg-blue-700 text-white font-bold p-1.5 rounded-lg flex items-center justify-center transition-colors shrink-0"
+                        disabled={isAdding || !newTaskText.trim()}
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-bold p-1.5 rounded-lg flex items-center justify-center transition-colors shrink-0 w-8 h-8 disabled:bg-slate-600 disabled:cursor-wait"
                         aria-label="Add task"
                     >
-                        <PlusIcon className="h-4 w-4" />
+                        {isAdding ? <SpinnerIcon className="h-4 w-4" /> : <PlusIcon className="h-4 w-4" />}
                     </button>
                 </div>
             )}
