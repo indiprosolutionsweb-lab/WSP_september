@@ -33,12 +33,12 @@ export const TasksListView: React.FC<TasksListViewProps> = ({ userTasks, viewing
     const headerGridCols = isTimeTrackingEnabled ? "grid-cols-[1fr_2fr_6fr_2fr_1fr]" : "grid-cols-[1fr_2fr_7fr_2fr]";
 
     return (
-        <div className="bg-sky-100/60 rounded-xl p-6 md:p-8 mt-4 flex-grow flex flex-col">
-            <h2 className="text-3xl font-bold text-slate-800 mb-6 text-center">Tasks List for {viewingUser.name}</h2>
-            <div className="flex flex-col md:flex-row items-center justify-center gap-4 mb-6 bg-white p-4 rounded-lg shadow-lg">
+        <div className="bg-slate-800 rounded-xl p-6 md:p-8 mt-4 flex-grow flex flex-col border border-slate-700">
+            <h2 className="text-3xl font-bold text-slate-200 mb-6 text-center">Tasks List for {viewingUser.name}</h2>
+            <div className="flex flex-col md:flex-row items-center justify-center gap-4 mb-6 bg-slate-700 p-4 rounded-lg shadow-lg">
                 <div className="flex items-center gap-2">
-                    <label htmlFor="status-filter" className="font-semibold text-slate-600">Status:</label>
-                    <select id="status-filter" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as TaskStatus | 'all')} className="bg-slate-100 border border-slate-300 rounded-md px-3 py-1.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <label htmlFor="status-filter" className="font-semibold text-slate-300">Status:</label>
+                    <select id="status-filter" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as TaskStatus | 'all')} className="bg-slate-700 border border-slate-600 rounded-md px-3 py-1.5 text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
                         <option value="all">All</option>
                         {Object.values(TaskStatus).map(status => <option key={status} value={status}>{status}</option>)}
                     </select>
@@ -48,7 +48,7 @@ export const TasksListView: React.FC<TasksListViewProps> = ({ userTasks, viewing
             <div className="flex-grow overflow-y-auto pr-2 -mr-2">
                 {filteredTasks.length > 0 ? (
                     <div className="space-y-2">
-                        <div className={`grid ${headerGridCols} gap-4 items-center bg-sky-200/70 p-3 rounded-lg font-bold text-slate-600 text-sm sticky top-0 z-10`}>
+                        <div className={`grid ${headerGridCols} gap-4 items-center bg-slate-900/80 p-3 rounded-lg font-bold text-slate-400 text-sm sticky top-0 z-10`}>
                             <div className="text-center">Wk</div>
                             <div>Day</div>
                             <div>Task Description</div>
@@ -58,7 +58,7 @@ export const TasksListView: React.FC<TasksListViewProps> = ({ userTasks, viewing
                         {filteredTasks.map(task => <FilteredTaskItem key={task.id} task={task} />)}
                     </div>
                 ) : (
-                    <div className="text-center py-10 text-slate-500 bg-white rounded-lg">
+                    <div className="text-center py-10 text-slate-400 bg-slate-700 rounded-lg">
                         <p className="text-lg">No tasks found for the selected criteria.</p>
                         <p className="mt-2">Try adjusting the status or week range filters.</p>
                     </div>
