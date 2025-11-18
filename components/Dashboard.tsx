@@ -14,19 +14,19 @@ const statusInfo: { [key in TaskStatus]: { label: string; color: string; textCol
     [TaskStatus.Complete]: {
         label: 'Complete',
         color: 'bg-green-500',
-        textColor: 'text-green-600',
+        textColor: 'text-green-400',
         borderColor: 'border-green-500',
     },
     [TaskStatus.Incomplete]: {
         label: 'Incomplete',
         color: 'bg-red-500',
-        textColor: 'text-red-600',
+        textColor: 'text-red-400',
         borderColor: 'border-red-500',
     },
     [TaskStatus.Additional]: {
         label: 'Additional',
         color: 'bg-blue-500',
-        textColor: 'text-blue-600',
+        textColor: 'text-blue-400',
         borderColor: 'border-blue-500',
     },
 };
@@ -77,27 +77,27 @@ export const Dashboard: React.FC<DashboardProps> = ({ startWeek, endWeek, viewin
 
     if (isLoading) {
         return (
-            <div className="text-center p-10 bg-sky-100/60 rounded-xl">
-                <h2 className="text-2xl font-bold text-slate-700">{title}</h2>
-                <p className="mt-4 text-slate-600">Loading analysis...</p>
+            <div className="text-center p-10 bg-slate-800 rounded-xl border border-slate-700">
+                <h2 className="text-2xl font-bold text-slate-200">{title}</h2>
+                <p className="mt-4 text-slate-400">Loading analysis...</p>
             </div>
         );
     }
 
     if (error) {
          return (
-            <div className="text-center p-10 bg-sky-100/60 rounded-xl">
-                <h2 className="text-2xl font-bold text-red-600">Error</h2>
-                <p className="mt-4 text-slate-600">{error}</p>
+            <div className="text-center p-10 bg-slate-800 rounded-xl border border-slate-700">
+                <h2 className="text-2xl font-bold text-red-500">Error</h2>
+                <p className="mt-4 text-slate-400">{error}</p>
             </div>
         );
     }
     
     if (!stats || stats.total_tasks === 0) {
         return (
-            <div className="text-center p-10 bg-sky-100/60 rounded-xl">
-                <h2 className="text-2xl font-bold text-slate-700">{title}</h2>
-                <p className="mt-4 text-slate-600">No tasks to analyze for this week range.</p>
+            <div className="text-center p-10 bg-slate-800 rounded-xl border border-slate-700">
+                <h2 className="text-2xl font-bold text-slate-200">{title}</h2>
+                <p className="mt-4 text-slate-400">No tasks to analyze for this week range.</p>
             </div>
         );
     }
@@ -121,37 +121,37 @@ export const Dashboard: React.FC<DashboardProps> = ({ startWeek, endWeek, viewin
     };
 
     return (
-        <div className="bg-sky-100/60 rounded-xl p-6 md:p-8">
-            <h2 className="text-3xl font-bold text-slate-800 mb-6 text-center">{title}</h2>
+        <div className="bg-slate-800 rounded-xl p-6 md:p-8 border border-slate-700">
+            <h2 className="text-3xl font-bold text-slate-200 mb-6 text-center">{title}</h2>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                <div className="bg-white p-6 rounded-lg shadow-lg border-l-4 border-slate-400">
-                    <h3 className="text-xl font-semibold text-slate-700">Total Tasks</h3>
-                    <p className="text-4xl font-bold text-slate-900 mt-2">{stats.total_tasks}</p>
-                    <p className="text-slate-500 text-sm mt-1">For the selected range</p>
+                <div className="bg-slate-700 p-6 rounded-lg shadow-lg border-l-4 border-slate-400">
+                    <h3 className="text-xl font-semibold text-slate-300">Total Tasks</h3>
+                    <p className="text-4xl font-bold text-white mt-2">{stats.total_tasks}</p>
+                    <p className="text-slate-400 text-sm mt-1">For the selected range</p>
                 </div>
 
                 {(Object.keys(statusInfo) as TaskStatus[]).map(status => (
-                    <div key={status} className={`bg-white p-6 rounded-lg shadow-lg border-l-4 ${statusInfo[status].borderColor}`}>
+                    <div key={status} className={`bg-slate-700 p-6 rounded-lg shadow-lg border-l-4 ${statusInfo[status].borderColor}`}>
                         <h3 className={`text-xl font-semibold ${statusInfo[status].textColor}`}>{statusInfo[status].label} Tasks</h3>
-                        <p className="text-4xl font-bold text-slate-900 mt-2">{statusCounts[status]}</p>
-                        <p className="text-slate-500 text-sm mt-1">{percentages[status].toFixed(1)}% of total</p>
+                        <p className="text-4xl font-bold text-white mt-2">{statusCounts[status]}</p>
+                        <p className="text-slate-400 text-sm mt-1">{percentages[status].toFixed(1)}% of total</p>
                     </div>
                 ))}
             </div>
 
             {isTimeTrackingEnabled && (
                 <div className="my-10">
-                    <h3 className="text-2xl font-bold text-slate-800 mb-4 text-center">Time Analysis</h3>
+                    <h3 className="text-2xl font-bold text-slate-200 mb-4 text-center">Time Analysis</h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                         <div className="bg-slate-50/70 p-6 rounded-lg shadow-lg border-l-4 border-purple-500 lg:col-span-1 sm:col-span-2">
-                            <h3 className="text-xl font-semibold text-purple-600">Total Time Spent</h3>
-                            <p className="text-4xl font-bold text-slate-900 mt-2">{formatTime(stats.total_time)}</p>
+                         <div className="bg-slate-700 p-6 rounded-lg shadow-lg border-l-4 border-purple-500 lg:col-span-1 sm:col-span-2">
+                            <h3 className="text-xl font-semibold text-purple-400">Total Time Spent</h3>
+                            <p className="text-4xl font-bold text-white mt-2">{formatTime(stats.total_time)}</p>
                         </div>
                         {(Object.keys(statusInfo) as TaskStatus[]).map(status => (
-                            <div key={status} className={`bg-white p-6 rounded-lg shadow-lg border-l-4 ${statusInfo[status].borderColor}`}>
+                            <div key={status} className={`bg-slate-700 p-6 rounded-lg shadow-lg border-l-4 ${statusInfo[status].borderColor}`}>
                                 <h3 className={`text-xl font-semibold ${statusInfo[status].textColor}`}>Time on {statusInfo[status].label}</h3>
-                                <p className="text-4xl font-bold text-slate-900 mt-2">{formatTime(timeByStatus[status])}</p>
+                                <p className="text-4xl font-bold text-white mt-2">{formatTime(timeByStatus[status])}</p>
                             </div>
                         ))}
                     </div>
@@ -159,17 +159,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ startWeek, endWeek, viewin
             )}
 
             <div>
-                <h3 className="text-2xl font-bold text-slate-800 mb-4 text-center">Task Status Distribution</h3>
-                <div className="w-full bg-slate-200 rounded-lg p-6 flex justify-around items-end gap-4 h-80">
+                <h3 className="text-2xl font-bold text-slate-200 mb-4 text-center">Task Status Distribution</h3>
+                <div className="w-full bg-slate-900 rounded-lg p-6 flex justify-around items-end gap-4 h-80 border border-slate-700">
                     {(Object.keys(statusInfo) as TaskStatus[]).map(status => (
                         <div key={status} className="flex flex-col items-center h-full justify-end w-1/4">
-                             <div className="text-slate-800 font-bold text-lg mb-1">{percentages[status].toFixed(1)}%</div>
+                             <div className="text-slate-300 font-bold text-lg mb-1">{percentages[status].toFixed(1)}%</div>
                             <div
                                 className={`w-full rounded-t-md ${statusInfo[status].color} transition-all duration-500 ease-out`}
                                 style={{ height: `${percentages[status]}%` }}
                                 title={`${statusInfo[status].label}: ${percentages[status].toFixed(1)}%`}
                             ></div>
-                            <p className="mt-2 text-slate-700 font-semibold">{statusInfo[status].label}</p>
+                            <p className="mt-2 text-slate-400 font-semibold">{statusInfo[status].label}</p>
                         </div>
                     ))}
                 </div>
