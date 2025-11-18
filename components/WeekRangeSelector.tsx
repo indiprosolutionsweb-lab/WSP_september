@@ -26,11 +26,11 @@ export const WeekRangeSelector: React.FC<WeekRangeSelectorProps> = ({ weekRange,
             id={id}
             value={value}
             onChange={(e) => handleUpdate(type, e.target.value)}
-            className="w-20 bg-slate-700 border border-slate-600 rounded-lg px-2 py-1 text-slate-100 text-center text-base font-bold focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-20 bg-white border border-slate-300 rounded-lg px-2 py-1 text-slate-800 text-center text-base font-bold focus:outline-none focus:ring-2 focus:ring-blue-500"
             aria-label={type === 'start' ? "Start week" : "End week"}
         >
             {Array.from({ length: TOTAL_WEEKS }, (_, i) => i + 1).map(weekNum => (
-                <option key={weekNum} value={weekNum} className="font-normal bg-slate-800">
+                <option key={weekNum} value={weekNum} className="font-normal bg-white">
                     {weekNum}
                 </option>
             ))}
@@ -39,11 +39,11 @@ export const WeekRangeSelector: React.FC<WeekRangeSelectorProps> = ({ weekRange,
 
     return (
         <div className="flex items-center justify-center space-x-2 p-2">
-            <label htmlFor="start-week-input" className="text-base font-bold text-slate-200 tracking-wide">Weeks</label>
+            <label htmlFor="start-week-input" className="text-base font-bold text-slate-800 tracking-wide">Weeks</label>
             <WeekDropdown id="start-week-input" value={weekRange.start} type="start" />
-            <span className="text-slate-400">to</span>
+            <span className="text-slate-500">to</span>
             <WeekDropdown id="end-week-input" value={weekRange.end} type="end" />
-            <span className="text-base text-slate-400 font-normal">of {TOTAL_WEEKS}</span>
+            <span className="text-base text-slate-500 font-normal">of {TOTAL_WEEKS}</span>
         </div>
     );
 };
