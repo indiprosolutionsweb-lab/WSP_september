@@ -27,6 +27,7 @@
     /* Hide spinner buttons on number inputs for Firefox */
     input[type='number'] {
       -moz-appearance: textfield;
+      color-scheme: light; /* Ensure dark text on Firefox */
     }
 
     /* Custom style to replicate Tailwind's line-clamp functionality */
@@ -52,7 +53,7 @@
     }
 </style>
 </head>
-<body class="bg-slate-900 text-white">
+<body class="bg-sky-50 text-slate-800">
     <div id="root"></div>
     <div id="modal-root"></div>
     <script type="module" src="/index.tsx"></script>
