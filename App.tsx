@@ -543,23 +543,23 @@ const App: React.FC = () => {
     
     const renderContent = () => {
         if (isTasksLoading && viewingUser) {
-            return <div className="flex-grow flex items-center justify-center text-xl text-slate-600">Loading tasks for {viewingUser.name}...</div>;
+            return <div className="flex-grow flex items-center justify-center text-xl text-slate-400">Loading tasks for {viewingUser.name}...</div>;
         }
         if (currentView === 'upcoming') {
-            if (!permissions.canAccessPersonalViews) return <div className="flex-grow flex items-center justify-center text-xl text-slate-600">You do not have permission to view this page.</div>;
+            if (!permissions.canAccessPersonalViews) return <div className="flex-grow flex items-center justify-center text-xl text-slate-400">You do not have permission to view this page.</div>;
             return <UnplannedTasksView unplannedTasks={unplannedTasks} onAddTask={handleAddUnplannedTask} onUpdateTask={handleUpdateUnplannedTask} onDeleteTask={handleDeleteUnplannedTask} onPlanTask={handlePlanTask} currentWeek={currentWeek} />;
         }
         if (currentView === 'focus') {
-            if (!permissions.canAccessPersonalViews) return <div className="flex-grow flex items-center justify-center text-xl text-slate-600">You do not have permission to view this page.</div>;
+            if (!permissions.canAccessPersonalViews) return <div className="flex-grow flex items-center justify-center text-xl text-slate-400">You do not have permission to view this page.</div>;
             return <FocusView note={focusNote} onSave={handleUpdateFocusNote} />;
         }
         if (currentView === 'management' && permissions.canManageUsers) return <ManagementView companies={companies} currentUser={currentUserProfile} onAddCompany={handleAddCompany} onDeleteCompany={handleDeleteCompany} onUpdateUserProfile={handleUpdateUserProfile} onDeleteUser={handleDeleteUser} onCreateUser={handleCreateUser} />;
         if (currentView === 'tasks-list' && viewingUser) {
-            if (!permissions.canAccessPersonalViews) return <div className="flex-grow flex items-center justify-center text-xl text-slate-600">You do not have permission to view this page.</div>;
+            if (!permissions.canAccessPersonalViews) return <div className="flex-grow flex items-center justify-center text-xl text-slate-400">You do not have permission to view this page.</div>;
             return <TasksListView userTasks={viewingUserTasks} viewingUser={viewingUser} initialWeek={currentWeek} />;
         }
-        if (currentUserProfile.role === Role.Superadmin && !viewingUser) return <div className="flex flex-col flex-grow items-center justify-center"><div className="text-center p-10 bg-white/60 rounded-xl"><h2 className="text-2xl font-bold text-slate-800">Welcome, Super Admin!</h2><p className="mt-4 text-slate-600">There are no other users to view. Go to 'Management' to add companies and users.</p></div></div>;
-        if (!viewingUser) return <div className="flex items-center justify-center h-full text-2xl font-semibold text-slate-600">Loading user data...</div>;
+        if (currentUserProfile.role === Role.Superadmin && !viewingUser) return <div className="flex flex-col flex-grow items-center justify-center"><div className="text-center p-10 bg-slate-800 rounded-xl border border-slate-700"><h2 className="text-2xl font-bold text-slate-200">Welcome, Super Admin!</h2><p className="mt-4 text-slate-400">There are no other users to view. Go to 'Management' to add companies and users.</p></div></div>;
+        if (!viewingUser) return <div className="flex items-center justify-center h-full text-2xl font-semibold text-slate-400">Loading user data...</div>;
         
         return <>
             {currentView === 'board' && <TaskBoard currentWeek={currentWeek} tasks={viewingUserTasks} onAddTask={(week, day, text) => handleAddTask(viewingUser.id, week, day, text)} onUpdateTask={handleUpdateTask} onDeleteTask={handleDeleteTask} canEditTasks={permissions.canEditTasks} canAddTask={permissions.canAddTask} />}
@@ -569,9 +569,9 @@ const App: React.FC = () => {
     }
 
 
-    if (!isLoaded) return <div className="flex items-center justify-center h-screen text-2xl font-semibold text-slate-600">Loading WSP...</div>;
+    if (!isLoaded) return <div className="flex items-center justify-center h-screen text-2xl font-semibold text-slate-400">Loading WSP...</div>;
     if (!session?.user) return <>{isPasswordRecovery ? <ResetPasswordPage onResetSuccess={() => setIsPasswordRecovery(false)} /> : <LoginPage />}{DEV_MODE && <DevUserSwitcher />}</>;
-    if (!currentUserProfile) return <>{<div className="flex items-center justify-center h-screen text-2xl font-semibold text-slate-600">Loading Profile...</div>}{DEV_MODE && <DevUserSwitcher />}</>;
+    if (!currentUserProfile) return <>{<div className="flex items-center justify-center h-screen text-2xl font-semibold text-slate-400">Loading Profile...</div>}{DEV_MODE && <DevUserSwitcher />}</>;
 
     return (
         <div className="min-h-screen flex flex-col p-4 font-sans">
@@ -591,7 +591,7 @@ const App: React.FC = () => {
             <main className="flex flex-col flex-grow w-full max-w-screen-2xl mx-auto">
                 <div className="flex-shrink-0">
                     {(currentView === 'board' || currentView === 'dashboard') && viewingUser && (
-                        <div className="relative flex flex-col sm:flex-row flex-wrap items-center justify-center bg-white/80 backdrop-blur-sm rounded-lg mb-4 p-1 gap-2">
+                        <div className="relative flex flex-col sm:flex-row flex-wrap items-center justify-center bg-slate-800/80 backdrop-blur-sm rounded-lg mb-4 p-1 gap-2 border border-slate-700">
                             {currentView === 'board' ? <WeekSelector currentWeek={currentWeek} setCurrentWeek={setCurrentWeek} /> : <WeekRangeSelector weekRange={weekRange} setWeekRange={setWeekRange} />}
                             <div className="sm:absolute sm:right-2 sm:top-1/2 sm:-translate-y-1/2">
                                 <DownloadTasks allTasks={viewingUserTasks} viewingUser={viewingUser} initialStartWeek={currentView === 'board' ? currentWeek : weekRange.start} initialEndWeek={currentView === 'board' ? currentWeek : weekRange.end} />
@@ -601,7 +601,7 @@ const App: React.FC = () => {
                 </div>
                 {renderContent()}
             </main>
-            <footer className="flex items-center justify-between py-4 text-slate-600 text-sm mt-auto border-t border-slate-200">
+            <footer className="flex items-center justify-between py-4 text-slate-500 text-sm mt-auto border-t border-slate-800">
                 <p>{footerText}</p>
                  <div className="flex items-center justify-end gap-1 opacity-60">
                     <svg width="12" height="12" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -609,7 +609,7 @@ const App: React.FC = () => {
                         <rect x="0" y="80" width="80" height="120" fill="#F4911E"/>
                         <rect x="80" y="80" width="120" height="120" fill="#0098DA"/>
                     </svg>
-                    <span className="text-slate-400" style={{ fontSize: '0.65rem' }}>Indipro skill and services private limited</span>
+                    <span className="text-slate-500" style={{ fontSize: '0.65rem' }}>Indipro skill and services private limited</span>
                 </div>
             </footer>
             {DEV_MODE && <DevUserSwitcher />}
