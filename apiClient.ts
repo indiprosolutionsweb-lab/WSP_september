@@ -1,4 +1,3 @@
-
 import { supa } from './supabaseClient.ts';
 import { mockSupa } from './localStorageClient.ts';
 
