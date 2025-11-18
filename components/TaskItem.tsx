@@ -12,9 +12,9 @@ interface TaskItemProps {
 }
 
 const statusStyles: { [key in TaskStatus]: { select: string; border: string; } } = {
-    [TaskStatus.Incomplete]: { select: 'bg-red-100 text-red-700', border: 'border-l-4 border-red-500' },
-    [TaskStatus.Complete]: { select: 'bg-green-100 text-green-700', border: 'border-l-4 border-green-500' },
-    [TaskStatus.Additional]: { select: 'bg-blue-100 text-blue-700', border: 'border-l-4 border-blue-500' },
+    [TaskStatus.Incomplete]: { select: 'bg-red-900/40 text-red-200', border: 'border-l-4 border-red-500' },
+    [TaskStatus.Complete]: { select: 'bg-green-900/40 text-green-200', border: 'border-l-4 border-green-500' },
+    [TaskStatus.Additional]: { select: 'bg-blue-900/40 text-blue-200', border: 'border-l-4 border-blue-500' },
 };
 
 export const TaskItem: React.FC<TaskItemProps> = ({ task, onUpdateTask, onDeleteTask, canEdit }) => {
@@ -78,7 +78,7 @@ export const TaskItem: React.FC<TaskItemProps> = ({ task, onUpdateTask, onDelete
 
     return (
         <div 
-            className={`p-1.5 bg-white rounded-lg shadow-md mb-1.5 flex flex-col transition-all duration-200 hover:bg-sky-100/70 ${isEditing ? 'cursor-default' : 'cursor-pointer'} ${statusStyles[task.status].border} ${task.is_priority ? 'ring-2 ring-yellow-400/70' : ''} ${isNewlyAdded ? 'animate-task-in' : ''}`}
+            className={`p-1.5 bg-slate-700 rounded-lg shadow-md mb-1.5 flex flex-col transition-all duration-200 hover:bg-slate-600 ${isEditing ? 'cursor-default' : 'cursor-pointer'} ${statusStyles[task.status].border} ${task.is_priority ? 'ring-2 ring-yellow-400/70' : ''} ${isNewlyAdded ? 'animate-task-in' : ''}`}
             onClick={() => !isEditing && setIsExpanded(prev => !prev)}
             onDoubleClick={handleDoubleClick}
             aria-expanded={isExpanded}
@@ -91,26 +91,26 @@ export const TaskItem: React.FC<TaskItemProps> = ({ task, onUpdateTask, onDelete
                     onKeyDown={handleKeyDown}
                     onClick={(e) => e.stopPropagation()} // Prevent card collapse on click inside textarea
                     autoFocus
-                    className="w-full bg-slate-100 border border-slate-300 rounded-md p-1 mb-2 text-slate-800 text-sm resize-none focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    className="w-full bg-slate-600 border border-slate-500 rounded-md p-1 mb-2 text-slate-200 text-sm resize-none focus:outline-none focus:ring-1 focus:ring-blue-500"
                     rows={Math.max(2, Math.min(6, editText.split('\n').length))}
                 />
             ) : (
-                <div className={`flex-grow text-slate-700 text-sm ${isExpanded ? 'whitespace-normal break-words' : 'task-line-clamp'}`} title={task.text}>
+                <div className={`flex-grow text-slate-200 text-sm ${isExpanded ? 'whitespace-normal break-words' : 'task-line-clamp'}`} title={task.text}>
                     {task.text}
                 </div>
             )}
             
-            <div className="flex items-center justify-between pt-1 border-t border-slate-200/80" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between pt-1 border-t border-slate-600" onClick={(e) => e.stopPropagation()}>
                 <div className="flex items-center space-x-1">
                     <select
                         value={task.status}
                         onChange={handleStatusChange}
                         disabled={!canEdit}
-                        className={`rounded px-0.5 py-px text-[11px] font-semibold focus:outline-none focus:ring-1 focus:ring-slate-400 transition-colors ${statusStyles[task.status].select} ${disabledClass}`}
+                        className={`rounded px-0.5 py-px text-[11px] font-semibold focus:outline-none focus:ring-1 focus:ring-slate-500 transition-colors ${statusStyles[task.status].select} ${disabledClass}`}
                         aria-label="Task status"
                     >
                         {Object.values(TaskStatus).map(status => (
-                            <option key={status} value={status} className="bg-white text-black font-normal">
+                            <option key={status} value={status} className="bg-slate-700 text-slate-200 font-normal">
                                 {status}
                             </option>
                         ))}
@@ -122,7 +122,7 @@ export const TaskItem: React.FC<TaskItemProps> = ({ task, onUpdateTask, onDelete
                             value={task.time_taken || ''}
                             onChange={handleTimeChange}
                             disabled={!canEdit}
-                            className={`w-8 bg-slate-200/70 rounded text-slate-800 text-center py-px px-0.5 text-[11px] focus:outline-none ${disabledClass}`}
+                            className={`w-8 bg-slate-600 rounded text-slate-200 text-center py-px px-0.5 text-[11px] focus:outline-none ${disabledClass}`}
                             min="0"
                             placeholder="Time"
                             aria-label="Time taken in minutes"
@@ -134,7 +134,7 @@ export const TaskItem: React.FC<TaskItemProps> = ({ task, onUpdateTask, onDelete
                     <div className="flex items-center gap-0.5">
                         <button
                             onClick={handlePriorityToggle}
-                            className={`p-px rounded-full transition-colors ${task.is_priority ? 'text-yellow-500 hover:text-yellow-400' : 'text-slate-400 hover:text-yellow-500'}`}
+                            className={`p-px rounded-full transition-colors ${task.is_priority ? 'text-yellow-500 hover:text-yellow-400' : 'text-slate-500 hover:text-yellow-500'}`}
                             aria-label="Toggle task priority"
                             title="Toggle priority"
                         >
@@ -142,7 +142,7 @@ export const TaskItem: React.FC<TaskItemProps> = ({ task, onUpdateTask, onDelete
                         </button>
                         <button
                             onClick={() => onDeleteTask(task.id)}
-                            className="p-px text-slate-400 hover:text-red-500 hover:bg-red-100 rounded-full transition-colors"
+                            className="p-px text-slate-500 hover:text-red-500 hover:bg-red-900/30 rounded-full transition-colors"
                             aria-label="Delete task"
                         >
                             <TrashIcon />
