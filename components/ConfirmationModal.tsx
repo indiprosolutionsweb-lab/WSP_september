@@ -37,23 +37,23 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ isOpen, on
 
     const modalContent = (
         <div 
-            className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 transition-opacity duration-300"
+            className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center z-50 transition-opacity duration-300"
             onClick={onClose}
             aria-modal="true"
             role="dialog"
         >
             <div 
-                className="bg-slate-800 rounded-lg shadow-xl p-6 w-full max-w-md mx-4 transform transition-all duration-300 scale-95 opacity-0 animate-fade-in-scale"
+                className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-4 transform transition-all duration-300 scale-95 opacity-0 animate-fade-in-scale"
                 onClick={e => e.stopPropagation()} // Prevent closing when clicking inside the modal
             >
-                <h2 className="text-xl font-bold text-slate-100 mb-4">{title}</h2>
-                <div className="text-slate-300 mb-6">
+                <h2 className="text-xl font-bold text-slate-900 mb-4">{title}</h2>
+                <div className="text-slate-600 mb-6">
                     {message}
                 </div>
                 <div className="flex justify-end gap-4">
                     <button
                         onClick={onClose}
-                        className="px-4 py-2 rounded-md font-semibold text-sm bg-slate-600 text-slate-200 hover:bg-slate-500 transition-colors focus:outline-none focus:ring-2 focus:ring-slate-400"
+                        className="px-4 py-2 rounded-md font-semibold text-sm bg-slate-200 text-slate-700 hover:bg-slate-300 transition-colors focus:outline-none focus:ring-2 focus:ring-slate-400"
                     >
                         Cancel
                     </button>
