@@ -8,9 +8,9 @@ interface FilteredTaskItemProps {
 }
 
 const statusStyles: { [key in TaskStatus]: { text: string; bg: string; } } = {
-    [TaskStatus.Incomplete]: { text: 'text-red-300', bg: 'bg-red-900/50' },
-    [TaskStatus.Complete]: { text: 'text-green-300', bg: 'bg-green-900/50' },
-    [TaskStatus.Additional]: { text: 'text-blue-300', bg: 'bg-blue-900/50' },
+    [TaskStatus.Incomplete]: { text: 'text-red-800', bg: 'bg-red-100' },
+    [TaskStatus.Complete]: { text: 'text-green-800', bg: 'bg-green-100' },
+    [TaskStatus.Additional]: { text: 'text-blue-800', bg: 'bg-blue-100' },
 };
 
 const formatTime = (totalMinutes: number): string => {
@@ -28,7 +28,7 @@ export const FilteredTaskItem: React.FC<FilteredTaskItemProps> = ({ task }) => {
     const gridCols = isTimeTrackingEnabled ? "grid-cols-[1fr_2fr_6fr_2fr_1fr]" : "grid-cols-[1fr_2fr_7fr_2fr]";
 
     return (
-        <div className={`grid ${gridCols} gap-4 items-center bg-slate-800 p-3 rounded-lg text-sm text-slate-300`}>
+        <div className={`grid ${gridCols} gap-4 items-center bg-white p-3 rounded-lg text-sm text-slate-700`}>
             <div className="font-semibold text-center">{week_number}</div>
             <div>{day}</div>
             <div className="whitespace-pre-wrap break-words">{text}</div>
