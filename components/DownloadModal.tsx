@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { TOTAL_WEEKS } from '../constants.ts';
@@ -69,11 +70,11 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({ isOpen, onClose, o
             id={id}
             value={value}
             onChange={(e) => onChange(parseInt(e.target.value, 10))}
-            className="w-24 bg-slate-700 border border-slate-600 rounded-lg px-2 py-1 text-slate-100 text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-24 bg-slate-100 border border-slate-300 rounded-lg px-2 py-1 text-slate-800 text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
             aria-label={label}
         >
             {Array.from({ length: TOTAL_WEEKS }, (_, i) => i + 1).map(weekNum => (
-                <option key={weekNum} value={weekNum} className="font-normal bg-slate-800">
+                <option key={weekNum} value={weekNum} className="font-normal bg-white">
                     {weekNum}
                 </option>
             ))}
@@ -82,25 +83,25 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({ isOpen, onClose, o
     
     const modalContent = (
         <div 
-            className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 transition-opacity duration-300"
+            className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center z-50 transition-opacity duration-300"
             onClick={onClose}
             aria-modal="true"
             role="dialog"
         >
             <div 
-                className="bg-slate-800 rounded-lg shadow-xl p-6 w-full max-w-md mx-4 transform transition-all duration-300 scale-95 opacity-0 animate-fade-in-scale"
+                className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-4 transform transition-all duration-300 scale-95 opacity-0 animate-fade-in-scale"
                 onClick={e => e.stopPropagation()}
             >
-                <h2 className="text-xl font-bold text-slate-100 mb-4">Download Tasks</h2>
-                <p className="text-slate-300 mb-6">Select the range of weeks you want to export to a CSV file.</p>
+                <h2 className="text-xl font-bold text-slate-900 mb-4">Download Tasks</h2>
+                <p className="text-slate-600 mb-6">Select the range of weeks you want to export to a CSV file.</p>
 
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
                      <div className="flex items-center gap-2">
-                        <label htmlFor="start-week-modal" className="font-semibold text-slate-300">From Week:</label>
+                        <label htmlFor="start-week-modal" className="font-semibold text-slate-700">From Week:</label>
                         <WeekDropdown id="start-week-modal" value={startWeek} onChange={handleStartWeekChange} label="Start week for download" />
                     </div>
                     <div className="flex items-center gap-2">
-                        <label htmlFor="end-week-modal" className="font-semibold text-slate-300">To Week:</label>
+                        <label htmlFor="end-week-modal" className="font-semibold text-slate-700">To Week:</label>
                         <WeekDropdown id="end-week-modal" value={endWeek} onChange={handleEndWeekChange} label="End week for download" />
                     </div>
                 </div>
@@ -108,7 +109,7 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({ isOpen, onClose, o
                 <div className="flex justify-end gap-4">
                     <button
                         onClick={onClose}
-                        className="px-4 py-2 rounded-md font-semibold text-sm bg-slate-600 text-slate-200 hover:bg-slate-500 transition-colors focus:outline-none focus:ring-2 focus:ring-slate-400"
+                        className="px-4 py-2 rounded-md font-semibold text-sm bg-slate-200 text-slate-700 hover:bg-slate-300 transition-colors focus:outline-none focus:ring-2 focus:ring-slate-400"
                     >
                         Cancel
                     </button>
