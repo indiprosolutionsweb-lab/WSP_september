@@ -122,7 +122,7 @@ export const DownloadTasks: React.FC<DownloadTasksProps> = ({ allTasks, viewingU
                 <button
                     onClick={() => setIsModalOpen(true)}
                     disabled={isDownloading}
-                    className="px-2 py-1 rounded-md font-semibold text-sm transition-colors bg-green-600 text-white shadow-md hover:bg-green-700 disabled:bg-slate-600 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="px-2 py-1 rounded-md font-semibold text-sm transition-colors bg-green-600 text-white shadow-md hover:bg-green-700 disabled:bg-slate-400 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                     {isDownloading ? 'Processing...' : 'Download'}
                 </button>
