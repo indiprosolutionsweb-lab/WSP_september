@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { Profile, Role, Company } from '../types.ts';
 import { TrashIcon, DownloadIcon } from './icons.tsx';
@@ -43,6 +44,8 @@ export const ManagementView: React.FC<ManagementViewProps> = ({ companies, curre
     const [selectedCompanyId, setSelectedCompanyId] = useState<string>(companies[0]?.id || 'unassigned');
     const [currentPage, setCurrentPage] = useState(1);
     const [refetchTrigger, setRefetchTrigger] = useState(0);
+    const [updatingRoleId, setUpdatingRoleId] = useState<string | null>(null);
+
 
     // State to hold fetched users, loading status, and total count
     const [viewState, setViewState] = useState<{
@@ -109,6 +112,21 @@ export const ManagementView: React.FC<ManagementViewProps> = ({ companies, curre
         setRefetchTrigger(c => c + 1); // Trigger a refetch
     };
 
+    const handleUserRoleChange = async (profile: Profile, newRole: Role) => {
+        if (profile.role === newRole) return;
+        setUpdatingRoleId(profile.id);
+        try {
+            await onUpdateUserProfile({ ...profile, role: newRole });
+            // After successful update, trigger a refetch of the user list in this component
+            setRefetchTrigger(prev => prev + 1);
+        } catch (error) {
+            // Error is handled in onUpdateUserProfile with an alert in App.tsx
+            console.error("Failed to update user role", error);
+        } finally {
+            setUpdatingRoleId(null);
+        }
+    };
+
     const openConfirmationModal = (type: 'user' | 'company', id: string, name: string) => setModalState({ isOpen: true, type, id, name });
     const closeConfirmationModal = () => setModalState({ isOpen: false, type: null, id: null, name: null });
     
@@ -148,54 +166,54 @@ export const ManagementView: React.FC<ManagementViewProps> = ({ companies, curre
     };
 
     return (
-        <div className="bg-slate-800/50 rounded-xl p-6 md:p-8 mt-4">
-            <h2 className="text-3xl font-bold text-slate-200 mb-6 text-center">Management</h2>
+        <div className="bg-sky-100/60 rounded-xl p-6 md:p-8 mt-4">
+            <h2 className="text-3xl font-bold text-slate-800 mb-6 text-center">Management</h2>
             
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* User Management Panel */}
-                <div className="bg-slate-800 p-6 rounded-lg shadow-lg">
-                    <div className="flex justify-between items-center mb-4 border-b border-slate-700 pb-2">
-                        <h3 className="text-xl font-semibold text-blue-300">Users</h3>
+                <div className="bg-white p-6 rounded-lg shadow-lg">
+                    <div className="flex justify-between items-center mb-4 border-b border-slate-200 pb-2">
+                        <h3 className="text-xl font-semibold text-blue-600">Users</h3>
                         <button onClick={handleDownloadUsersCsv} className="px-3 py-1.5 rounded-md font-semibold text-sm transition-colors bg-teal-600 text-white shadow-md hover:bg-teal-700 flex items-center gap-2" aria-label="Download user list as CSV">
                             <DownloadIcon /><span>Download List</span>
                         </button>
                     </div>
                     
-                    <div className="bg-slate-700/50 p-4 rounded-md mb-6">
-                        <h4 className="font-semibold text-slate-200 mb-3">Create New User</h4>
+                    <div className="bg-slate-100/70 p-4 rounded-md mb-6">
+                        <h4 className="font-semibold text-slate-700 mb-3">Create New User</h4>
                         <form onSubmit={handleCreateUserSubmit} className="space-y-3">
                             {/* Form fields remain the same */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <div>
-                                    <label htmlFor="new-user-name" className="block text-sm font-medium text-slate-300 mb-1">Full Name</label>
-                                    <input id="new-user-name" type="text" value={newUserName} onChange={e => setNewUserName(e.target.value)} required className="w-full bg-slate-600 border border-slate-500 rounded-md px-3 py-1.5 text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                                    <label htmlFor="new-user-name" className="block text-sm font-medium text-slate-600 mb-1">Full Name</label>
+                                    <input id="new-user-name" type="text" value={newUserName} onChange={e => setNewUserName(e.target.value)} required className="w-full bg-white border border-slate-300 rounded-md px-3 py-1.5 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500" />
                                 </div>
                                 <div>
-                                    <label htmlFor="new-user-role" className="block text-sm font-medium text-slate-300 mb-1">Role</label>
-                                    <select id="new-user-role" value={newUserRole} onChange={e => setNewUserRole(e.target.value as Role.User | Role.Admin)} className="w-full bg-slate-600 border border-slate-500 rounded-md px-3 py-1.5 text-slate-100 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                    <label htmlFor="new-user-role" className="block text-sm font-medium text-slate-600 mb-1">Role</label>
+                                    <select id="new-user-role" value={newUserRole} onChange={e => setNewUserRole(e.target.value as Role.User | Role.Admin)} className="w-full bg-white border border-slate-300 rounded-md px-3 py-1.5 text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500">
                                         <option value={Role.User}>User</option>
                                         <option value={Role.Admin}>Admin</option>
                                     </select>
                                 </div>
                             </div>
                             <div>
-                                <label htmlFor="new-user-company" className="block text-sm font-medium text-slate-300 mb-1">Company (Optional)</label>
-                                <select id="new-user-company" value={newUserCompanyId} onChange={e => setNewUserCompanyId(e.target.value)} className="w-full bg-slate-600 border border-slate-500 rounded-md px-3 py-1.5 text-slate-100 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                <label htmlFor="new-user-company" className="block text-sm font-medium text-slate-600 mb-1">Company (Optional)</label>
+                                <select id="new-user-company" value={newUserCompanyId} onChange={e => setNewUserCompanyId(e.target.value)} className="w-full bg-white border border-slate-300 rounded-md px-3 py-1.5 text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500">
                                     <option value="">Unassigned</option>
                                     {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                                 </select>
                             </div>
                             <div>
-                                <label htmlFor="new-user-email" className="block text-sm font-medium text-slate-300 mb-1">Email Address</label>
-                                <input id="new-user-email" type="email" value={newUserEmail} onChange={e => setNewUserEmail(e.target.value)} required className="w-full bg-slate-600 border border-slate-500 rounded-md px-3 py-1.5 text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                                <label htmlFor="new-user-email" className="block text-sm font-medium text-slate-600 mb-1">Email Address</label>
+                                <input id="new-user-email" type="email" value={newUserEmail} onChange={e => setNewUserEmail(e.target.value)} required className="w-full bg-white border border-slate-300 rounded-md px-3 py-1.5 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500" />
                             </div>
                             <div>
-                                <label htmlFor="new-user-password" className="block text-sm font-medium text-slate-300 mb-1">Password</label>
-                                <input id="new-user-password" type="password" value={newUserPassword} onChange={e => setNewUserPassword(e.target.value)} required className="w-full bg-slate-600 border border-slate-500 rounded-md px-3 py-1.5 text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                                <label htmlFor="new-user-password" className="block text-sm font-medium text-slate-600 mb-1">Password</label>
+                                <input id="new-user-password" type="password" value={newUserPassword} onChange={e => setNewUserPassword(e.target.value)} required className="w-full bg-white border border-slate-300 rounded-md px-3 py-1.5 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500" />
                             </div>
-                            {creationError && <p className="text-sm text-red-400">{creationError}</p>}
+                            {creationError && <p className="text-sm text-red-500">{creationError}</p>}
                             <div className="flex justify-end">
-                                <button type="submit" disabled={isCreatingUser} className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-1.5 rounded-md transition-colors disabled:bg-slate-500 disabled:cursor-wait">
+                                <button type="submit" disabled={isCreatingUser} className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-1.5 rounded-md transition-colors disabled:bg-slate-400 disabled:cursor-wait">
                                     {isCreatingUser ? 'Creating...' : 'Create User'}
                                 </button>
                             </div>
@@ -203,8 +221,8 @@ export const ManagementView: React.FC<ManagementViewProps> = ({ companies, curre
                     </div>
                     
                     <div className="mb-4">
-                        <label htmlFor="company-filter" className="font-semibold text-slate-300 mr-2 block mb-1 sm:inline-block">Filter by Company:</label>
-                        <select id="company-filter" value={selectedCompanyId} onChange={e => setSelectedCompanyId(e.target.value)} className="w-full sm:w-auto bg-slate-600 border border-slate-500 rounded-md px-2 py-1 text-white focus:outline-none">
+                        <label htmlFor="company-filter" className="font-semibold text-slate-700 mr-2 block mb-1 sm:inline-block">Filter by Company:</label>
+                        <select id="company-filter" value={selectedCompanyId} onChange={e => setSelectedCompanyId(e.target.value)} className="w-full sm:w-auto bg-slate-100 border border-slate-300 rounded-md px-2 py-1 text-slate-800 focus:outline-none">
                             {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                             <option value="unassigned">Unassigned Users</option>
                         </select>
@@ -212,29 +230,49 @@ export const ManagementView: React.FC<ManagementViewProps> = ({ companies, curre
                     
                     <div className="space-y-3 min-h-[300px]">
                         {viewState.isLoading ? (
-                            <div className="flex justify-center items-center h-full text-slate-400">Loading users...</div>
+                            <div className="flex justify-center items-center h-full text-slate-500">Loading users...</div>
                         ) : viewState.error ? (
-                            <div className="flex justify-center items-center h-full text-red-400">{viewState.error}</div>
+                            <div className="flex justify-center items-center h-full text-red-500">{viewState.error}</div>
                         ) : viewState.users.length > 0 ? viewState.users.map(user => (
-                            <div key={user.id} className="flex flex-wrap items-center justify-between gap-2 bg-slate-700/50 p-3 rounded-md">
+                            <div key={user.id} className="flex flex-wrap items-center justify-between gap-2 bg-slate-100/70 p-3 rounded-md">
                                 <div>
                                     <div className="flex items-center gap-2">
-                                        <span className="text-slate-200 font-medium">{user.name}</span>
-                                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${user.role === Role.Admin ? 'bg-indigo-500' : 'bg-gray-500'}`}>{user.role}</span>
+                                        <span className="text-slate-800 font-medium">{user.name}</span>
+                                        {currentUser.role === Role.Superadmin ? (
+                                            <div className="relative">
+                                                <select
+                                                    value={user.role}
+                                                    onChange={(e) => handleUserRoleChange(user, e.target.value as Role)}
+                                                    disabled={updatingRoleId === user.id}
+                                                    className={`text-xs font-bold rounded-full text-white py-0.5 pl-2 pr-6 appearance-none focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-offset-slate-100/70 focus:ring-blue-500 disabled:opacity-70 disabled:cursor-wait ${user.role === Role.Admin ? 'bg-indigo-500' : 'bg-gray-500'}`}
+                                                    aria-label={`Change role for ${user.name}`}
+                                                >
+                                                    <option value={Role.User} className="bg-white text-black font-normal">user</option>
+                                                    <option value={Role.Admin} className="bg-white text-black font-normal">admin</option>
+                                                </select>
+                                                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-1">
+                                                    <svg className="h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
+                                                        <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M6 8l4 4 4-4"/>
+                                                    </svg>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <span className={`text-xs font-bold px-2 py-0.5 rounded-full text-white ${user.role === Role.Admin ? 'bg-indigo-500' : 'bg-gray-500'}`}>{user.role}</span>
+                                        )}
                                     </div>
-                                    <span className="text-xs text-slate-400 block mt-1">{user.email}</span>
+                                    <span className="text-xs text-slate-500 block mt-1">{user.email}</span>
                                 </div>
                                 <div className="flex items-center gap-3">
-                                    <select value={user.company_id || ''} onChange={(e) => handleUserCompanyChange(user, e.target.value)} className="bg-slate-600 border border-slate-500 rounded-md px-2 py-1 text-white text-sm">
+                                    <select value={user.company_id || ''} onChange={(e) => handleUserCompanyChange(user, e.target.value)} className="bg-white border border-slate-300 rounded-md px-2 py-1 text-slate-800 text-sm">
                                         <option value="">No Company</option>
                                         {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                                     </select>
-                                    <button onClick={() => openConfirmationModal('user', user.id, user.name)} className="p-1.5 text-slate-500 hover:text-red-500 hover:bg-red-900/50 rounded-full transition-colors" aria-label={`Delete ${user.name}`}>
+                                    <button onClick={() => openConfirmationModal('user', user.id, user.name)} className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-100 rounded-full transition-colors" aria-label={`Delete ${user.name}`}>
                                         <TrashIcon />
                                     </button>
                                 </div>
                             </div>
-                        )) : <p className="text-slate-400 text-center py-4">No users found for this selection.</p>}
+                        )) : <p className="text-slate-500 text-center py-4">No users found for this selection.</p>}
                     </div>
                      <Pagination
                         currentPage={currentPage}
@@ -244,35 +282,40 @@ export const ManagementView: React.FC<ManagementViewProps> = ({ companies, curre
                     />
                 </div>
 
-                <div className="bg-slate-800 p-6 rounded-lg shadow-lg">
-                    <h3 className="text-xl font-semibold text-purple-300 mb-4 border-b border-slate-700 pb-2">Companies</h3>
-                    <div className="bg-slate-700/50 p-4 rounded-md mb-6">
-                        <h4 className="font-semibold text-slate-200 mb-2">Onboard New Company</h4>
+                <div className="bg-white p-6 rounded-lg shadow-lg">
+                    <h3 className="text-xl font-semibold text-purple-600 mb-4 border-b border-slate-200 pb-2">Companies</h3>
+                    <div className="bg-slate-100/70 p-4 rounded-md mb-6">
+                        <h4 className="font-semibold text-slate-700 mb-2">Onboard New Company</h4>
                         <div className="flex flex-col sm:flex-row gap-2">
-                            <input type="text" placeholder="New Company Name" value={newCompanyName} onChange={(e) => setNewCompanyName(e.target.value)} className="flex-grow bg-slate-600 border border-slate-500 rounded-md px-3 py-1.5 text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-purple-500" />
-                            <select value={newCompanyCalendar} onChange={e => setNewCompanyCalendar(e.target.value as 'January' | 'April')} className="bg-slate-600 border border-slate-500 rounded-md px-3 py-1.5 text-slate-100 focus:outline-none focus:ring-1 focus:ring-purple-500">
+                            <input type="text" placeholder="New Company Name" value={newCompanyName} onChange={(e) => setNewCompanyName(e.target.value)} className="flex-grow bg-white border border-slate-300 rounded-md px-3 py-1.5 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-purple-500" />
+                            <select value={newCompanyCalendar} onChange={e => setNewCompanyCalendar(e.target.value as 'January' | 'April')} className="bg-white border border-slate-300 rounded-md px-3 py-1.5 text-slate-800 focus:outline-none focus:ring-1 focus:ring-purple-500">
                                 <option value="April">Starts April</option><option value="January">Starts January</option>
                             </select>
                             <button onClick={handleAddCompany} className="bg-purple-600 hover:bg-purple-700 text-white font-semibold px-4 py-1.5 rounded-md transition-colors">Add Company</button>
                         </div>
                     </div>
                     <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
-                        {companies.map(company => (
-                            <div key={company.id} className="flex items-center justify-between bg-slate-700/50 p-3 rounded-md">
+                        {companies.length > 0 ? companies.map(company => (
+                            <div key={company.id} className="flex items-center justify-between bg-slate-100/70 p-3 rounded-md">
                                 <div>
-                                    <p className="text-slate-200 font-medium">{company.name}</p>
-                                    <p className="text-xs text-slate-400">Year starts in {company.calendar_start_month}</p>
+                                    <span className="text-slate-800 font-medium">{company.name}</span>
+                                    <span className="text-xs text-slate-500 block">FY Starts: {company.calendar_start_month}</span>
                                 </div>
-                                <button onClick={() => openConfirmationModal('company', company.id, company.name)} className="p-1.5 text-slate-500 hover:text-red-500 hover:bg-red-900/50 rounded-full transition-colors disabled:opacity-40 disabled:cursor-not-allowed" title={"Delete company"} aria-label={`Delete ${company.name}`}>
+                                <button onClick={() => openConfirmationModal('company', company.id, company.name)} className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-100 rounded-full transition-colors" aria-label={`Delete ${company.name}`}>
                                     <TrashIcon />
                                 </button>
                             </div>
-                        ))}
+                        )) : <p className="text-slate-500 text-center py-4">No companies created yet.</p>}
                     </div>
                 </div>
             </div>
-
-            <ConfirmationModal isOpen={modalState.isOpen} onClose={closeConfirmationModal} onConfirm={handleConfirmDelete} title={`Delete ${modalState.type === 'user' ? 'User' : 'Company'}`} message={<p>Are you sure you want to permanently delete <strong className="font-bold text-slate-100">{modalState.name}</strong>?{modalState.type === 'user' && ' All associated tasks will also be deleted.'} This action cannot be undone.</p>} />
+             <ConfirmationModal 
+                isOpen={modalState.isOpen}
+                onClose={closeConfirmationModal}
+                onConfirm={handleConfirmDelete}
+                title={`Delete ${modalState.type === 'user' ? 'User' : 'Company'}`}
+                message={<>Are you sure you want to delete <strong className="text-slate-800">{modalState.name}</strong>? {modalState.type === 'user' && "This will also delete all of their tasks."} This action cannot be undone.</>}
+            />
         </div>
     );
 };
