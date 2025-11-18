@@ -43,24 +43,24 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ isOpen, on
             role="dialog"
         >
             <div 
-                className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-4 transform transition-all duration-300 scale-95 opacity-0 animate-fade-in-scale"
+                className="bg-slate-800 rounded-lg shadow-xl p-6 w-full max-w-md mx-4 transform transition-all duration-300 scale-95 opacity-0 animate-fade-in-scale border border-slate-700"
                 onClick={e => e.stopPropagation()} // Prevent closing when clicking inside the modal
             >
-                <h2 className="text-xl font-bold text-slate-900 mb-4">{title}</h2>
-                <div className="text-slate-600 mb-6">
+                <h2 className="text-xl font-bold text-slate-200 mb-4">{title}</h2>
+                <div className="text-slate-400 mb-6">
                     {message}
                 </div>
                 <div className="flex justify-end gap-4">
                     <button
                         onClick={onClose}
-                        className="px-4 py-2 rounded-md font-semibold text-sm bg-slate-200 text-slate-700 hover:bg-slate-300 transition-colors focus:outline-none focus:ring-2 focus:ring-slate-400"
+                        className="px-4 py-2 rounded-md font-semibold text-sm bg-slate-700 text-slate-300 hover:bg-slate-600 transition-colors focus:outline-none focus:ring-2 focus:ring-slate-500"
                     >
                         Cancel
                     </button>
                     <button
                         onClick={onConfirm}
                         autoFocus
-                        className="px-4 py-2 rounded-md font-semibold text-sm bg-red-600 text-white hover:bg-red-700 transition-colors focus:outline-none focus:ring-2 focus:ring-red-400"
+                        className="px-4 py-2 rounded-md font-semibold text-sm bg-red-600 text-white hover:bg-red-700 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500"
                     >
                         Confirm Delete
                     </button>
