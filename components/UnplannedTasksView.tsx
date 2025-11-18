@@ -31,12 +31,12 @@ export const UnplannedTasksView: React.FC<UnplannedTasksViewProps> = ({ unplanne
     };
 
     return (
-        <div className="bg-slate-800/50 rounded-xl p-6 md:p-8 mt-4 flex-grow flex flex-col">
-            <h2 className="text-3xl font-bold text-slate-200 mb-6 text-center">Upcoming Task List</h2>
-            <div className="mb-6 bg-slate-800 p-4 rounded-lg shadow-lg">
-                 <label htmlFor="new-unplanned-task" className="block text-lg font-semibold text-slate-300 mb-2">Add a new task</label>
+        <div className="bg-sky-100/60 rounded-xl p-6 md:p-8 mt-4 flex-grow flex flex-col">
+            <h2 className="text-3xl font-bold text-slate-800 mb-6 text-center">Upcoming Task List</h2>
+            <div className="mb-6 bg-white p-4 rounded-lg shadow-lg">
+                 <label htmlFor="new-unplanned-task" className="block text-lg font-semibold text-slate-700 mb-2">Add a new task</label>
                  <div className="flex items-start gap-3">
-                    <textarea id="new-unplanned-task" value={newTaskText} onChange={(e) => setNewTaskText(e.target.value)} onKeyDown={handleKeyDown} placeholder="Enter task details..." className="flex-grow bg-slate-700 border border-slate-600 rounded-lg p-2 text-sm text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y min-h-[40px]" rows={2} />
+                    <textarea id="new-unplanned-task" value={newTaskText} onChange={(e) => setNewTaskText(e.target.value)} onKeyDown={handleKeyDown} placeholder="Enter task details..." className="flex-grow bg-slate-100 border border-slate-300 rounded-lg p-2 text-sm text-slate-800 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y min-h-[40px]" rows={2} />
                     <button onClick={handleAddTask} className="bg-blue-600 hover:bg-blue-700 text-white font-bold p-2 rounded-lg flex items-center justify-center transition-colors shrink-0" aria-label="Add task"><PlusIcon className="h-5 w-5" /></button>
                 </div>
             </div>
@@ -46,7 +46,7 @@ export const UnplannedTasksView: React.FC<UnplannedTasksViewProps> = ({ unplanne
                         <UnplannedTaskItem key={task.id} task={task} onUpdateTask={onUpdateTask} onDeleteTask={onDeleteTask} onPlanTask={onPlanTask} currentWeek={currentWeek} />
                     ))
                 ) : (
-                    <div className="text-center py-10 text-slate-400">
+                    <div className="text-center py-10 text-slate-500">
                         <p>Your upcoming task list is empty.</p>
                         <p>Add tasks above to get started!</p>
                     </div>
