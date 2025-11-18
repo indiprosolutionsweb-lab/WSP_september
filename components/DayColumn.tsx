@@ -41,8 +41,8 @@ export const DayColumn: React.FC<DayColumnProps> = ({ day, tasks, onAddTask, onU
     };
 
     return (
-        <div className="bg-slate-800/50 rounded-xl p-1.5 flex flex-col h-full min-h-[300px]">
-            <h2 className="text-lg font-bold text-slate-300 mb-1.5 text-center border-b-2 border-slate-700 pb-1.5">{day}</h2>
+        <div className="bg-sky-100/60 rounded-xl p-1.5 flex flex-col h-full min-h-[300px]">
+            <h2 className="text-lg font-semibold text-slate-700 mb-1.5 text-center border-b-2 border-slate-300 pb-1.5">{day}</h2>
             <div className="flex-grow overflow-y-auto pr-1.5">
                 {tasks.map(task => (
                     <TaskItem 
@@ -55,7 +55,7 @@ export const DayColumn: React.FC<DayColumnProps> = ({ day, tasks, onAddTask, onU
                 ))}
             </div>
             {canAddTask && (
-                <div className="mt-2 flex items-center space-x-2 pt-2 border-t border-slate-700/50">
+                <div className="mt-2 flex items-center space-x-2 pt-2 border-t border-slate-300/70">
                     <input
                         type="text"
                         value={newTaskText}
@@ -63,12 +63,12 @@ export const DayColumn: React.FC<DayColumnProps> = ({ day, tasks, onAddTask, onU
                         onKeyDown={handleKeyDown}
                         placeholder="Add task..."
                         disabled={isAdding}
-                        className="min-w-0 flex-grow bg-slate-700 border border-slate-600 rounded-lg px-2 py-1.5 text-sm text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-wait"
+                        className="min-w-0 flex-grow bg-white border border-slate-300 rounded-lg px-2 py-1.5 text-sm text-slate-800 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-wait"
                     />
                     <button
                         onClick={handleAddTask}
                         disabled={isAdding || !newTaskText.trim()}
-                        className="bg-blue-600 hover:bg-blue-700 text-white font-bold p-1.5 rounded-lg flex items-center justify-center transition-colors shrink-0 w-8 h-8 disabled:bg-slate-600 disabled:cursor-wait"
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-bold p-1.5 rounded-lg flex items-center justify-center transition-colors shrink-0 w-8 h-8 disabled:bg-slate-400 disabled:cursor-wait"
                         aria-label="Add task"
                     >
                         {isAdding ? <SpinnerIcon className="h-4 w-4" /> : <PlusIcon className="h-4 w-4" />}
