@@ -60,18 +60,18 @@ export const LoginPage: React.FC<LoginPageProps> = () => {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-slate-900 font-sans p-4">
+        <div className="min-h-screen flex items-center justify-center bg-sky-50 font-sans p-4">
             <div className="w-full max-w-md">
                 <div className="text-center mb-8">
                      <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-600">
                         WSP
                     </h1>
-                    <p className="text-slate-400 mt-2">Sign in to continue to your dashboard.</p>
+                    <p className="text-slate-500 mt-2">Sign in to continue to your dashboard.</p>
                 </div>
                 
-                <form onSubmit={handleSubmit} className="bg-slate-800/50 shadow-2xl rounded-xl p-8 space-y-6">
+                <form onSubmit={handleSubmit} className="bg-white/80 backdrop-blur-sm border border-slate-200 shadow-2xl rounded-xl p-8 space-y-6">
                     <div>
-                        <label htmlFor="email" className="block text-sm font-medium text-slate-300 mb-2">
+                        <label htmlFor="email" className="block text-sm font-medium text-slate-600 mb-2">
                             Email Address
                         </label>
                         <input
@@ -82,7 +82,7 @@ export const LoginPage: React.FC<LoginPageProps> = () => {
                             required
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                            className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
                             placeholder="you@example.com"
                             disabled={loading}
                         />
@@ -90,7 +90,7 @@ export const LoginPage: React.FC<LoginPageProps> = () => {
 
                     <div>
                         <div className="flex items-center justify-between">
-                            <label htmlFor="password" className="block text-sm font-medium text-slate-300">
+                            <label htmlFor="password" className="block text-sm font-medium text-slate-600">
                                 Password
                             </label>
                             <div className="text-sm">
@@ -98,7 +98,7 @@ export const LoginPage: React.FC<LoginPageProps> = () => {
                                     type="button"
                                     onClick={handlePasswordReset}
                                     disabled={loading}
-                                    className="font-medium text-blue-400 hover:text-blue-300 focus:outline-none focus:underline disabled:opacity-50"
+                                    className="font-medium text-blue-500 hover:text-blue-400 focus:outline-none focus:underline disabled:opacity-50"
                                 >
                                     Forgot password?
                                 </button>
@@ -113,7 +113,7 @@ export const LoginPage: React.FC<LoginPageProps> = () => {
                                 required
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                                className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
                                 placeholder="••••••••"
                                 disabled={loading}
                             />
@@ -121,17 +121,17 @@ export const LoginPage: React.FC<LoginPageProps> = () => {
                     </div>
                     
                     {error && (
-                        <p className="text-sm text-red-400 text-center">{error}</p>
+                        <p className="text-sm text-red-500 text-center">{error}</p>
                     )}
                     {message && (
-                        <p className="text-sm text-green-400 text-center">{message}</p>
+                        <p className="text-sm text-green-600 text-center">{message}</p>
                     )}
 
                     <div>
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-800 focus:ring-blue-500 transition-colors disabled:bg-slate-500 disabled:cursor-wait"
+                            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white focus:ring-blue-500 transition-colors disabled:bg-slate-400 disabled:cursor-wait"
                         >
                             {loading ? 'Signing in...' : 'Sign in'}
                         </button>
