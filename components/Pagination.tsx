@@ -64,24 +64,24 @@ export const Pagination: React.FC<PaginationProps> = ({ currentPage, totalItems,
     };
 
     return (
-        <div className="flex items-center justify-between pt-4 border-t border-slate-200 text-sm">
-            <div className="text-slate-500">
+        <div className="flex items-center justify-between pt-4 border-t border-slate-600 text-sm">
+            <div className="text-slate-400">
                 Showing{' '}
-                <span className="font-semibold text-slate-800">
+                <span className="font-semibold text-slate-200">
                     {Math.min((currentPage - 1) * itemsPerPage + 1, totalItems)}
                 </span>{' '}
                 to{' '}
-                <span className="font-semibold text-slate-800">
+                <span className="font-semibold text-slate-200">
                     {Math.min(currentPage * itemsPerPage, totalItems)}
                 </span>{' '}
-                of <span className="font-semibold text-slate-800">{totalItems}</span> results
+                of <span className="font-semibold text-slate-200">{totalItems}</span> results
             </div>
 
             <div className="flex items-center gap-1">
                 <button
                     onClick={handlePrev}
                     disabled={currentPage === 1}
-                    className="p-1.5 rounded-md text-slate-500 hover:bg-sky-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                    className="p-1.5 rounded-md text-slate-400 hover:bg-slate-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
                     aria-label="Previous page"
                 >
                     <ChevronLeftIcon />
@@ -95,13 +95,13 @@ export const Pagination: React.FC<PaginationProps> = ({ currentPage, totalItems,
                             className={`px-3 py-1 rounded-md transition-colors ${
                                 page === currentPage
                                     ? 'bg-blue-600 text-white font-bold'
-                                    : 'text-slate-600 hover:bg-sky-200'
+                                    : 'text-slate-400 hover:bg-slate-700'
                             }`}
                         >
                             {page}
                         </button>
                     ) : (
-                        <span key={index} className="px-3 py-1 text-slate-400">
+                        <span key={index} className="px-3 py-1 text-slate-500">
                             {page}
                         </span>
                     )
@@ -110,7 +110,7 @@ export const Pagination: React.FC<PaginationProps> = ({ currentPage, totalItems,
                 <button
                     onClick={handleNext}
                     disabled={currentPage === totalPages}
-                    className="p-1.5 rounded-md text-slate-500 hover:bg-sky-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                    className="p-1.5 rounded-md text-slate-400 hover:bg-slate-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
                     aria-label="Next page"
                 >
                     <ChevronRightIcon />
