@@ -33,8 +33,8 @@ export const DevUserSwitcher: React.FC = () => {
     return (
         <div className="fixed bottom-4 right-4 z-50 font-sans">
             {isOpen && (
-                <div className="absolute bottom-full right-0 mb-2 w-64 bg-slate-700 border border-slate-600 rounded-lg shadow-2xl p-2 max-h-80 overflow-y-auto">
-                    <h3 className="text-sm font-bold text-slate-200 px-2 pb-1 border-b border-slate-600">Switch User</h3>
+                <div className="absolute bottom-full right-0 mb-2 w-64 bg-white border border-slate-300 rounded-lg shadow-2xl p-2 max-h-80 overflow-y-auto">
+                    <h3 className="text-sm font-bold text-slate-700 px-2 pb-1 border-b border-slate-200">Switch User</h3>
                     <ul className="mt-1">
                         {MOCK_PROFILES.map(profile => (
                             <li key={profile.id}>
@@ -43,7 +43,7 @@ export const DevUserSwitcher: React.FC = () => {
                                     className={`w-full text-left text-sm px-2 py-1.5 rounded-md flex items-center justify-between gap-2 ${
                                         currentUser === profile.id 
                                         ? 'bg-blue-600 font-semibold text-white' 
-                                        : 'text-slate-300 hover:bg-slate-600'
+                                        : 'text-slate-700 hover:bg-slate-100'
                                     }`}
                                 >
                                     <span>{profile.name}</span>
@@ -54,10 +54,10 @@ export const DevUserSwitcher: React.FC = () => {
                          <li>
                             <button
                                 onClick={() => handleSwitch(null)}
-                                className={`w-full text-left text-sm px-2 py-1.5 rounded-md mt-1 border-t border-slate-600 ${
+                                className={`w-full text-left text-sm px-2 py-1.5 rounded-md mt-1 border-t border-slate-200 ${
                                     currentUser === 'null'
                                     ? 'bg-blue-600 font-semibold text-white'
-                                    : 'text-slate-300 hover:bg-slate-600'
+                                    : 'text-slate-700 hover:bg-slate-100'
                                 }`}
                             >
                                 Show Login Page
@@ -68,7 +68,7 @@ export const DevUserSwitcher: React.FC = () => {
             )}
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="bg-purple-600 text-white font-bold text-sm px-4 py-2 rounded-full shadow-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 focus:ring-offset-slate-900"
+                className="bg-purple-600 text-white font-bold text-sm px-4 py-2 rounded-full shadow-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 focus:ring-offset-sky-50"
                 title="Open Dev User Switcher"
             >
                 DEV: {buttonText}
