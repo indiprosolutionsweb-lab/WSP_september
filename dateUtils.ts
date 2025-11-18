@@ -1,4 +1,5 @@
 
+
 export const getFinancialYearStartDate = (year: number, startMonth: 'January' | 'April', companyName?: string): Date => {
     // Special rule for Decathlon: Year starts on Jan 1st exactly.
     if (companyName === 'Decathlon' && startMonth === 'January') {
