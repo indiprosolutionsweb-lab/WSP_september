@@ -10,7 +10,7 @@ interface DashboardProps {
     viewingUser: Profile;
 }
 
-const statusInfo: { [key in TaskStatus]: { label: string; color: string; textColor: string; borderColor: string; } } = {
+const statusInfo = {
     [TaskStatus.Complete]: {
         label: 'Complete',
         color: 'bg-green-500',
@@ -30,6 +30,8 @@ const statusInfo: { [key in TaskStatus]: { label: string; color: string; textCol
         borderColor: 'border-blue-500',
     },
 };
+
+const VISIBLE_STATUSES = Object.keys(statusInfo) as (keyof typeof statusInfo)[];
 
 const formatTime = (totalMinutes: number): string => {
     if (totalMinutes < 1) return '0m';
@@ -105,18 +107,21 @@ export const Dashboard: React.FC<DashboardProps> = ({ startWeek, endWeek, viewin
     const percentages = {
         [TaskStatus.Complete]: stats.total_tasks > 0 ? (stats.complete_count / stats.total_tasks) * 100 : 0,
         [TaskStatus.Incomplete]: stats.total_tasks > 0 ? (stats.incomplete_count / stats.total_tasks) * 100 : 0,
+        [TaskStatus.InProgress]: stats.total_tasks > 0 ? (stats.in_progress_count / stats.total_tasks) * 100 : 0,
         [TaskStatus.Additional]: stats.total_tasks > 0 ? (stats.additional_count / stats.total_tasks) * 100 : 0,
     };
 
     const statusCounts = {
         [TaskStatus.Complete]: stats.complete_count,
         [TaskStatus.Incomplete]: stats.incomplete_count,
+        [TaskStatus.InProgress]: stats.in_progress_count,
         [TaskStatus.Additional]: stats.additional_count,
     };
 
     const timeByStatus = {
         [TaskStatus.Complete]: stats.complete_time,
         [TaskStatus.Incomplete]: stats.incomplete_time,
+        [TaskStatus.InProgress]: stats.in_progress_time,
         [TaskStatus.Additional]: stats.additional_time,
     };
 
@@ -131,7 +136,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ startWeek, endWeek, viewin
                     <p className="text-slate-400 text-sm mt-1">For the selected range</p>
                 </div>
 
-                {(Object.keys(statusInfo) as TaskStatus[]).map(status => (
+                {VISIBLE_STATUSES.map(status => (
                     <div key={status} className={`bg-slate-700 p-6 rounded-lg shadow-lg border-l-4 ${statusInfo[status].borderColor}`}>
                         <h3 className={`text-xl font-semibold ${statusInfo[status].textColor}`}>{statusInfo[status].label} Tasks</h3>
                         <p className="text-4xl font-bold text-white mt-2">{statusCounts[status]}</p>
@@ -148,7 +153,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ startWeek, endWeek, viewin
                             <h3 className="text-xl font-semibold text-purple-400">Total Time Spent</h3>
                             <p className="text-4xl font-bold text-white mt-2">{formatTime(stats.total_time)}</p>
                         </div>
-                        {(Object.keys(statusInfo) as TaskStatus[]).map(status => (
+                        {VISIBLE_STATUSES.map(status => (
                             <div key={status} className={`bg-slate-700 p-6 rounded-lg shadow-lg border-l-4 ${statusInfo[status].borderColor}`}>
                                 <h3 className={`text-xl font-semibold ${statusInfo[status].textColor}`}>Time on {statusInfo[status].label}</h3>
                                 <p className="text-4xl font-bold text-white mt-2">{formatTime(timeByStatus[status])}</p>
@@ -161,7 +166,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ startWeek, endWeek, viewin
             <div>
                 <h3 className="text-2xl font-bold text-slate-200 mb-4 text-center">Task Status Distribution</h3>
                 <div className="w-full bg-slate-900 rounded-lg p-6 flex justify-around items-end gap-4 h-80 border border-slate-700">
-                    {(Object.keys(statusInfo) as TaskStatus[]).map(status => (
+                    {VISIBLE_STATUSES.map(status => (
                         <div key={status} className="flex flex-col items-center h-full justify-end w-1/4">
                              <div className="text-slate-300 font-bold text-lg mb-1">{percentages[status].toFixed(1)}%</div>
                             <div
@@ -169,7 +174,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ startWeek, endWeek, viewin
                                 style={{ height: `${percentages[status]}%` }}
                                 title={`${statusInfo[status].label}: ${percentages[status].toFixed(1)}%`}
                             ></div>
-                            <p className="mt-2 text-slate-400 font-semibold">{statusInfo[status].label}</p>
+                            <p className="mt-2 text-slate-400 font-semibold text-xs sm:text-base text-center">{statusInfo[status].label}</p>
                         </div>
                     ))}
                 </div>
