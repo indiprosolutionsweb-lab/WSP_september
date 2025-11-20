@@ -24,6 +24,7 @@ export interface Profile {
 
 export enum TaskStatus {
   Incomplete = 'Incomplete',
+  InProgress = 'In Progress',
   Complete = 'Complete',
   Additional = 'Additional',
 }
@@ -38,6 +39,7 @@ export interface Task {
   time_taken: number; // Time in minutes
   is_priority: boolean;
   created_at: string;
+  created_by?: string; // ID of the user who created the task
 }
 
 export interface UnplannedTask {
@@ -74,10 +76,12 @@ export type WeekTasks = {
 export interface TaskStats {
   complete_count: number;
   incomplete_count: number;
+  in_progress_count: number;
   additional_count: number;
   total_tasks: number;
   total_time: number;
   complete_time: number;
   incomplete_time: number;
+  in_progress_time: number;
   additional_time: number;
 }
