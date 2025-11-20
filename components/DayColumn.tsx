@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Day, Task } from '../types.ts';
+import { Day, Task, Profile } from '../types.ts';
 import { TaskItem } from './TaskItem.tsx';
 import { PlusIcon, SpinnerIcon } from './icons.tsx';
 
@@ -12,9 +12,21 @@ interface DayColumnProps {
     onDeleteTask: (taskId: string) => void;
     canEditTasks: boolean;
     canAddTask: boolean;
+    allProfiles: Profile[];
+    onMoveToUpcoming: (task: Task) => void;
 }
 
-export const DayColumn: React.FC<DayColumnProps> = ({ day, tasks, onAddTask, onUpdateTask, onDeleteTask, canEditTasks, canAddTask }) => {
+export const DayColumn: React.FC<DayColumnProps> = ({ 
+    day, 
+    tasks, 
+    onAddTask, 
+    onUpdateTask, 
+    onDeleteTask, 
+    canEditTasks, 
+    canAddTask,
+    allProfiles,
+    onMoveToUpcoming
+}) => {
     const [newTaskText, setNewTaskText] = useState('');
     const [isAdding, setIsAdding] = useState(false);
 
@@ -51,6 +63,8 @@ export const DayColumn: React.FC<DayColumnProps> = ({ day, tasks, onAddTask, onU
                         onUpdateTask={onUpdateTask}
                         onDeleteTask={onDeleteTask}
                         canEdit={canEditTasks}
+                        allProfiles={allProfiles}
+                        onMoveToUpcoming={onMoveToUpcoming}
                     />
                 ))}
             </div>
