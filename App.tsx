@@ -61,6 +61,7 @@ const App: React.FC = () => {
     const [isPasswordRecovery, setIsPasswordRecovery] = useState<boolean>(false);
     const isPerformingAdminActionRef = useRef(false); // Ref to prevent session switch during admin actions
     const viewingUserIdRef = useRef<string | null>(null); // Ref to track viewing user changes for lazy loading
+    const fetchingWeeksRef = useRef<Set<string>>(new Set()); // Ref to track in-flight fetch requests to prevent duplicates
 
     // Derived state for calendar settings based on the user being viewed
     const viewingCompany = useMemo(() => {
@@ -190,20 +191,29 @@ const App: React.FC = () => {
             setViewingUserTasks([]);
             setLoadedWeeks(new Set());
             viewingUserIdRef.current = null;
+            fetchingWeeksRef.current.clear();
             return;
         }
+
+        const fetchKey = `${viewingUser.id}-${currentWeek}`;
+        if (fetchingWeeksRef.current.has(fetchKey)) return;
 
         const userHasChanged = viewingUser.id !== viewingUserIdRef.current;
 
         // If the user has changed, we must reset everything and load the first week.
         if (userHasChanged) {
             viewingUserIdRef.current = viewingUser.id;
+            fetchingWeeksRef.current.add(fetchKey);
+
             setIsTasksLoading(true);
             setViewingUserTasks([]);
             setLoadedWeeks(new Set()); // Clear loaded weeks for new user
 
             apiClient.from('tasks').select('*').eq('user_id', viewingUser.id).eq('week_number', currentWeek)
                 .then(({ data, error }) => {
+                    // Guard: If user changed during fetch, ignore result
+                    if (viewingUserIdRef.current !== viewingUser.id) return;
+
                     if (error) {
                         console.error(`Error fetching initial tasks for user ${viewingUser.id}:`, error);
                         setLoadedWeeks(new Set()); // Ensure reset on error
@@ -214,28 +224,43 @@ const App: React.FC = () => {
                     }
                 })
                 .finally(() => {
-                    setIsTasksLoading(false);
+                    fetchingWeeksRef.current.delete(fetchKey);
+                    if (viewingUserIdRef.current === viewingUser.id) {
+                        setIsTasksLoading(false);
+                    }
                 });
             return; // Exit after handling user change
         }
 
         // If it's the same user, check if the current week's tasks need to be loaded.
         if (!loadedWeeks.has(currentWeek)) {
+            fetchingWeeksRef.current.add(fetchKey);
             setIsTasksLoading(true);
             apiClient.from('tasks').select('*').eq('user_id', viewingUser.id).eq('week_number', currentWeek)
                 .then(({ data, error }) => {
+                    // Guard: If user changed during fetch, ignore result
+                    if (viewingUserIdRef.current !== viewingUser.id) return;
+
                     if (error) {
                         console.error(`Error fetching tasks for week ${currentWeek}:`, error);
                     } else {
-                        setViewingUserTasks(prevTasks => [...prevTasks, ...(data || [])]);
+                        setViewingUserTasks(prevTasks => {
+                            // Filter out duplicates just in case race conditions occur
+                            const existingIds = new Set(prevTasks.map(t => t.id));
+                            const newTasks = (data || []).filter(t => !existingIds.has(t.id));
+                            return [...prevTasks, ...newTasks];
+                        });
                         setLoadedWeeks(prev => new Set(prev).add(currentWeek));
                     }
                 })
                 .finally(() => {
-                    setIsTasksLoading(false);
+                    fetchingWeeksRef.current.delete(fetchKey);
+                    if (viewingUserIdRef.current === viewingUser.id) {
+                        setIsTasksLoading(false);
+                    }
                 });
         }
-    }, [viewingUser, currentWeek]); // Effect depends only on user and week
+    }, [viewingUser, currentWeek, loadedWeeks]); // Added loadedWeeks to dependency array for correctness, though logic handles it
     
     useEffect(() => {
         const fetchUnplannedTasks = async (userId: string) => {
@@ -347,7 +372,7 @@ const App: React.FC = () => {
     };
 
     const handleAddTask = async (userId: string, week: number, day: Day, taskText: string) => {
-        if (!viewingUser || userId !== viewingUser.id) return;
+        if (!viewingUser || userId !== viewingUser.id || !currentUserProfile) return;
 
         const newTaskPayload = { 
             user_id: userId, 
@@ -356,7 +381,8 @@ const App: React.FC = () => {
             text: taskText, 
             status: TaskStatus.Incomplete, 
             time_taken: 0, 
-            is_priority: false 
+            is_priority: false,
+            created_by: currentUserProfile.id
         };
 
         const { data, error } = await apiClient.from('tasks').insert(newTaskPayload).select();
@@ -372,7 +398,9 @@ const App: React.FC = () => {
     };
     
     const handleUpdateTask = async (updatedTask: Task) => {
-        const { id, ...updateData } = updatedTask;
+        const { id, created_by, ...updateData } = updatedTask;
+        // We don't update created_by, so we exclude it. We also ensure we don't send read-only fields if they exist on the object.
+        
         const { error } = await apiClient.from('tasks').update(updateData).eq('id', id);
         if (error) {
             console.error("Error updating task:", error);
@@ -389,6 +417,43 @@ const App: React.FC = () => {
             alert(`Failed to delete task. This may be a permissions issue. Error: ${error.message}`);
         } else {
             setViewingUserTasks(prev => prev.filter(t => t.id !== taskId));
+        }
+    };
+
+    // Move a planned task to the unplanned list (Upcoming)
+    const handleMovePlannedToUnplanned = async (task: Task) => {
+        if (!viewingUser) return;
+        
+        // 1. Add to Unplanned Tasks
+        const newUnplannedPayload = { 
+            user_id: task.user_id, 
+            text: task.text, 
+            status: task.status === TaskStatus.Complete ? TaskStatus.Complete : TaskStatus.Incomplete, // Reset status or keep complete? Usually reset to incomplete if moving to backlog, but keeping it simple.
+            time_taken: task.time_taken, 
+            is_priority: task.is_priority 
+        };
+        
+        const { data: addedData, error: addError } = await apiClient.from('unplanned_tasks').insert(newUnplannedPayload).select();
+        
+        if (addError) {
+            console.error("Error moving task to upcoming (add step):", addError);
+            alert(`Failed to move task to upcoming. Error: ${addError.message}`);
+            return;
+        }
+
+        // 2. Delete from Planned Tasks
+        const { error: deleteError } = await apiClient.from('tasks').delete().eq('id', task.id);
+        
+        if (deleteError) {
+            console.error("Error moving task to upcoming (delete step):", deleteError);
+            // Note: In a real app, we might want to rollback the insert, but for now just alert.
+            alert(`Task added to upcoming but failed to delete from board. Please delete manually.`);
+        } else {
+            // UI Updates
+            if (addedData) {
+                setUnplannedTasks(prev => [...prev, addedData[0] as UnplannedTask]);
+            }
+            setViewingUserTasks(prev => prev.filter(t => t.id !== task.id));
         }
     };
 
@@ -428,8 +493,17 @@ const App: React.FC = () => {
     };
 
     const handlePlanTask = async (taskToPlan: UnplannedTask, week: number, day: Day) => {
-        if (!viewingUser || !permissions.canAccessPersonalViews) return;
-        const newPlannedTaskPayload = { user_id: taskToPlan.user_id, week_number: week, day: day, text: taskToPlan.text, status: taskToPlan.status, time_taken: taskToPlan.time_taken, is_priority: taskToPlan.is_priority };
+        if (!viewingUser || !permissions.canAccessPersonalViews || !currentUserProfile) return;
+        const newPlannedTaskPayload = { 
+            user_id: taskToPlan.user_id, 
+            week_number: week, 
+            day: day, 
+            text: taskToPlan.text, 
+            status: taskToPlan.status, 
+            time_taken: taskToPlan.time_taken, 
+            is_priority: taskToPlan.is_priority,
+            created_by: currentUserProfile.id
+        };
         const { data, error } = await apiClient.from('tasks').insert(newPlannedTaskPayload).select();
         if (error || !data) {
             console.error("Error creating planned task:", error);
@@ -562,7 +636,19 @@ const App: React.FC = () => {
         if (!viewingUser) return <div className="flex items-center justify-center h-full text-2xl font-semibold text-slate-400">Loading user data...</div>;
         
         return <>
-            {currentView === 'board' && <TaskBoard currentWeek={currentWeek} tasks={viewingUserTasks} onAddTask={(week, day, text) => handleAddTask(viewingUser.id, week, day, text)} onUpdateTask={handleUpdateTask} onDeleteTask={handleDeleteTask} canEditTasks={permissions.canEditTasks} canAddTask={permissions.canAddTask} />}
+            {currentView === 'board' && (
+                <TaskBoard 
+                    currentWeek={currentWeek} 
+                    tasks={viewingUserTasks} 
+                    onAddTask={(week, day, text) => handleAddTask(viewingUser.id, week, day, text)} 
+                    onUpdateTask={handleUpdateTask} 
+                    onDeleteTask={handleDeleteTask} 
+                    canEditTasks={permissions.canEditTasks} 
+                    canAddTask={permissions.canAddTask}
+                    allProfiles={allProfiles}
+                    onMoveToUpcoming={handleMovePlannedToUnplanned}
+                />
+            )}
             {currentView === 'dashboard' && <Dashboard startWeek={weekRange.start} endWeek={weekRange.end} viewingUser={viewingUser} />}
             {currentView === 'calendar' && <YearCalendarView financialYearStartDate={financialYearStart} financialYearString={financialYearLabel} />}
         </>;
