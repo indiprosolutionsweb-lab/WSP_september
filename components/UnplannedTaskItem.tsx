@@ -14,6 +14,7 @@ interface UnplannedTaskItemProps {
 
 const statusStyles: { [key in TaskStatus]: { select: string; border: string; } } = {
     [TaskStatus.Incomplete]: { select: 'bg-red-900/40 text-red-200', border: 'border-l-4 border-red-500' },
+    [TaskStatus.InProgress]: { select: 'bg-orange-900/40 text-orange-200', border: 'border-l-4 border-orange-500' },
     [TaskStatus.Complete]: { select: 'bg-green-900/40 text-green-200', border: 'border-l-4 border-green-500' },
     [TaskStatus.Additional]: { select: 'bg-blue-900/40 text-blue-200', border: 'border-l-4 border-blue-500' },
 };
