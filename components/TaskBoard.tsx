@@ -1,6 +1,6 @@
 
 import React, { useMemo } from 'react';
-import { Day, Task } from '../types.ts';
+import { Day, Task, Profile } from '../types.ts';
 import { DAYS } from '../constants.ts';
 import { DayColumn } from './DayColumn.tsx';
 
@@ -12,9 +12,21 @@ interface TaskBoardProps {
     onDeleteTask: (taskId: string) => void;
     canEditTasks: boolean;
     canAddTask: boolean;
+    allProfiles: Profile[];
+    onMoveToUpcoming: (task: Task) => void;
 }
 
-export const TaskBoard: React.FC<TaskBoardProps> = ({ currentWeek, tasks, onAddTask, onUpdateTask, onDeleteTask, canEditTasks, canAddTask }) => {
+export const TaskBoard: React.FC<TaskBoardProps> = ({ 
+    currentWeek, 
+    tasks, 
+    onAddTask, 
+    onUpdateTask, 
+    onDeleteTask, 
+    canEditTasks, 
+    canAddTask,
+    allProfiles,
+    onMoveToUpcoming
+}) => {
     
     const weekTasksByDay = useMemo(() => {
         const tasksForWeek = tasks.filter(task => task.week_number === currentWeek);
@@ -40,6 +52,8 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({ currentWeek, tasks, onAddT
                     onDeleteTask={onDeleteTask}
                     canEditTasks={canEditTasks}
                     canAddTask={canAddTask}
+                    allProfiles={allProfiles}
+                    onMoveToUpcoming={onMoveToUpcoming}
                 />
             ))}
         </div>
