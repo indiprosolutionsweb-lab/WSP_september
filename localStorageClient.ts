@@ -266,11 +266,13 @@ const rpc = async (functionName: string, params: any) => {
         const stats: TaskStats = {
             complete_count: 0,
             incomplete_count: 0,
+            in_progress_count: 0,
             additional_count: 0,
             total_tasks: 0,
             total_time: 0,
             complete_time: 0,
             incomplete_time: 0,
+            in_progress_time: 0,
             additional_time: 0,
         };
 
@@ -285,6 +287,9 @@ const rpc = async (functionName: string, params: any) => {
             } else if (task.status === TaskStatus.Incomplete) {
                 stats.incomplete_count++;
                 stats.incomplete_time += time;
+            } else if (task.status === TaskStatus.InProgress) {
+                stats.in_progress_count++;
+                stats.in_progress_time += time;
             } else if (task.status === TaskStatus.Additional) {
                 stats.additional_count++;
                 stats.additional_time += time;
