@@ -9,6 +9,7 @@ interface FilteredTaskItemProps {
 
 const statusStyles: { [key in TaskStatus]: { text: string; bg: string; } } = {
     [TaskStatus.Incomplete]: { text: 'text-red-200', bg: 'bg-red-900/50' },
+    [TaskStatus.InProgress]: { text: 'text-orange-200', bg: 'bg-orange-900/50' },
     [TaskStatus.Complete]: { text: 'text-green-200', bg: 'bg-green-900/50' },
     [TaskStatus.Additional]: { text: 'text-blue-200', bg: 'bg-blue-900/50' },
 };
