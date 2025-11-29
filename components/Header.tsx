@@ -71,7 +71,7 @@ export const Header: React.FC<HeaderProps> = ({ currentUser, viewingUser, compan
     );
 
     return (
-        <header className="mb-4 sticky top-4 z-20">
+        <header className="mb-4">
              <div className="w-full max-w-screen-2xl mx-auto flex flex-col xl:flex-row items-center justify-between gap-4 text-sm bg-slate-800/90 backdrop-blur-sm p-2 rounded-lg border border-slate-700 shadow-sm">
                 <div className="flex items-center gap-2.5 shrink-0">
                     <div className="flex flex-col items-center justify-center">
