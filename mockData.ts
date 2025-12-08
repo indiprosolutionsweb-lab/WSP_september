@@ -69,29 +69,29 @@ const generateDynamicMockTasks = (): Task[] => {
 
     let tasks: Task[] = [
         // Bob Builder (user-001)
-        { id: 'task-bob-curr-1', user_id: 'user-001', week_number: innovateWeeks[1], day: 'Monday', text: 'Begin development of the new reporting module.', status: TaskStatus.Incomplete, time_taken: 0, is_priority: false, created_at: new Date().toISOString() },
-        { id: 'task-bob-curr-2', user_id: 'user-001', week_number: innovateWeeks[1], day: 'Tuesday', text: 'Prepare technical specification for API endpoint.', status: TaskStatus.Incomplete, time_taken: 90, is_priority: false, created_at: new Date().toISOString() },
+        { id: 'task-bob-curr-1', user_id: 'user-001', week_number: innovateWeeks[1], day: 'Monday', text: 'Begin development of the new reporting module.', status: TaskStatus.Incomplete, time_taken: 0, is_priority: false, created_at: new Date().toISOString(), comments: 'Waiting for design mockups from the UI team.' },
+        { id: 'task-bob-curr-2', user_id: 'user-001', week_number: innovateWeeks[1], day: 'Tuesday', text: 'Prepare technical specification for API endpoint.', status: TaskStatus.Incomplete, time_taken: 90, is_priority: false, created_at: new Date().toISOString(), comments: null },
         
         // Charlie Crew (user-002)
-        { id: 'task-charlie-curr-1', user_id: 'user-002', week_number: innovateWeeks[1], day: 'Tuesday', text: 'Take meeting minutes for the all-hands call.', status: TaskStatus.Incomplete, time_taken: 0, is_priority: true, created_at: new Date().toISOString() },
-        { id: 'task-charlie-curr-2', user_id: 'user-002', week_number: innovateWeeks[1], day: 'Wednesday', text: 'Assist marketing with proofreading brochure content.', status: TaskStatus.Additional, time_taken: 40, is_priority: false, created_at: new Date().toISOString() },
+        { id: 'task-charlie-curr-1', user_id: 'user-002', week_number: innovateWeeks[1], day: 'Tuesday', text: 'Take meeting minutes for the all-hands call.', status: TaskStatus.Incomplete, time_taken: 0, is_priority: true, created_at: new Date().toISOString(), comments: null },
+        { id: 'task-charlie-curr-2', user_id: 'user-002', week_number: innovateWeeks[1], day: 'Wednesday', text: 'Assist marketing with proofreading brochure content.', status: TaskStatus.Additional, time_taken: 40, is_priority: false, created_at: new Date().toISOString(), comments: null },
         
         // Eve Employee (user-003)
-        { id: 'task-eve-curr-1', user_id: 'user-003', week_number: synergyWeeks[1], day: 'Tuesday', text: 'Review and approve expense reports.', status: TaskStatus.Complete, time_taken: 60, is_priority: false, created_at: new Date().toISOString() },
-        { id: 'task-eve-curr-2', user_id: 'user-003', week_number: synergyWeeks[1], day: 'Thursday', text: 'Conduct performance review check-ins.', status: TaskStatus.Incomplete, time_taken: 0, is_priority: true, created_at: new Date().toISOString() },
+        { id: 'task-eve-curr-1', user_id: 'user-003', week_number: synergyWeeks[1], day: 'Tuesday', text: 'Review and approve expense reports.', status: TaskStatus.Complete, time_taken: 60, is_priority: false, created_at: new Date().toISOString(), comments: 'All reports approved.' },
+        { id: 'task-eve-curr-2', user_id: 'user-003', week_number: synergyWeeks[1], day: 'Thursday', text: 'Conduct performance review check-ins.', status: TaskStatus.Incomplete, time_taken: 0, is_priority: true, created_at: new Date().toISOString(), comments: null },
         
         // Frank Field (user-004)
-        { id: 'task-frank-curr-1', user_id: 'user-004', week_number: innovateWeeks[1], day: 'Monday', text: 'Update Salesforce with new contacts.', status: TaskStatus.Complete, time_taken: 45, is_priority: false, created_at: new Date().toISOString() },
-        { id: 'task-frank-curr-2', user_id: 'user-004', week_number: innovateWeeks[1], day: 'Wednesday', text: 'Present Q2 marketing plan to management.', status: TaskStatus.Incomplete, time_taken: 0, is_priority: true, created_at: new Date().toISOString() },
+        { id: 'task-frank-curr-1', user_id: 'user-004', week_number: innovateWeeks[1], day: 'Monday', text: 'Update Salesforce with new contacts.', status: TaskStatus.Complete, time_taken: 45, is_priority: false, created_at: new Date().toISOString(), comments: null },
+        { id: 'task-frank-curr-2', user_id: 'user-004', week_number: innovateWeeks[1], day: 'Wednesday', text: 'Present Q2 marketing plan to management.', status: TaskStatus.Incomplete, time_taken: 0, is_priority: true, created_at: new Date().toISOString(), comments: 'Presentation slides are ready.' },
 
         // David Deca (user-decathlon-01)
-        { id: 'task-david-deca-1', user_id: 'user-decathlon-01', week_number: decathlonWeeks[1], day: 'Monday', text: 'Analyze weekly sales data.', status: TaskStatus.Incomplete, time_taken: 0, is_priority: true, created_at: new Date().toISOString() },
-        { id: 'task-david-deca-2', user_id: 'user-decathlon-01', week_number: decathlonWeeks[1], day: 'Friday', text: 'Plan next week\'s inventory check.', status: TaskStatus.Incomplete, time_taken: 0, is_priority: false, created_at: new Date().toISOString() },
+        { id: 'task-david-deca-1', user_id: 'user-decathlon-01', week_number: decathlonWeeks[1], day: 'Monday', text: 'Analyze weekly sales data.', status: TaskStatus.Incomplete, time_taken: 0, is_priority: true, created_at: new Date().toISOString(), comments: null },
+        { id: 'task-david-deca-2', user_id: 'user-decathlon-01', week_number: decathlonWeeks[1], day: 'Friday', text: 'Plan next week\'s inventory check.', status: TaskStatus.Incomplete, time_taken: 0, is_priority: false, created_at: new Date().toISOString(), comments: null },
 
         // Add some tasks for new users to test switching
-        { id: 'task-grace-1', user_id: 'user-a-01', week_number: innovateWeeks[1], day: 'Monday', text: 'Review Q3 budget proposals.', status: TaskStatus.Incomplete, time_taken: 0, is_priority: true, created_at: new Date().toISOString() },
-        { id: 'task-grace-2', user_id: 'user-a-01', week_number: innovateWeeks[1], day: 'Friday', text: 'Team retrospective meeting.', status: TaskStatus.Incomplete, time_taken: 0, is_priority: false, created_at: new Date().toISOString() },
-        { id: 'task-rachel-1', user_id: 'user-b-01', week_number: synergyWeeks[1], day: 'Tuesday', text: 'Client follow-up calls.', status: TaskStatus.Complete, time_taken: 120, is_priority: false, created_at: new Date().toISOString() },
+        { id: 'task-grace-1', user_id: 'user-a-01', week_number: innovateWeeks[1], day: 'Monday', text: 'Review Q3 budget proposals.', status: TaskStatus.Incomplete, time_taken: 0, is_priority: true, created_at: new Date().toISOString(), comments: null },
+        { id: 'task-grace-2', user_id: 'user-a-01', week_number: innovateWeeks[1], day: 'Friday', text: 'Team retrospective meeting.', status: TaskStatus.Incomplete, time_taken: 0, is_priority: false, created_at: new Date().toISOString(), comments: 'Need to book a room.' },
+        { id: 'task-rachel-1', user_id: 'user-b-01', week_number: synergyWeeks[1], day: 'Tuesday', text: 'Client follow-up calls.', status: TaskStatus.Complete, time_taken: 120, is_priority: false, created_at: new Date().toISOString(), comments: null },
     ];
     return tasks;
 };
