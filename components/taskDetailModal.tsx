@@ -24,12 +24,14 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
     const modalRoot = document.getElementById('modal-root');
     const [moveSelection, setMoveSelection] = useState<string>(task.day);
     const [statusSelection, setStatusSelection] = useState<TaskStatus>(task.status);
+    const [commentText, setCommentText] = useState<string>('');
 
     // Reset state when task changes or modal opens
     useEffect(() => {
         if (isOpen) {
             setMoveSelection(task.day);
             setStatusSelection(task.status);
+            setCommentText(task.comments || '');
         }
     }, [isOpen, task]);
 
@@ -68,19 +70,28 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
         setStatusSelection(e.target.value as TaskStatus);
     };
 
+    const handleCommentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        setCommentText(e.target.value);
+    };
+
     const handleSave = () => {
         if (moveSelection === 'Upcoming') {
             onMoveToUpcoming(task);
         } else {
-            // Check if changes were made to Day or Status
             const newDay = moveSelection as Day;
             const newStatus = statusSelection;
+            const newComments = commentText.trim();
 
-            if (newDay !== task.day || newStatus !== task.status) {
+            const hasDayChanged = newDay !== task.day;
+            const hasStatusChanged = newStatus !== task.status;
+            const hasCommentsChanged = newComments !== (task.comments || '').trim();
+
+            if (hasDayChanged || hasStatusChanged || hasCommentsChanged) {
                 onUpdateTask({
                     ...task,
                     day: newDay,
-                    status: newStatus
+                    status: newStatus,
+                    comments: newComments || null
                 });
             }
         }
@@ -107,7 +118,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                     </button>
                 </div>
 
-                <div className="p-4 space-y-6">
+                <div className="p-4 space-y-6 max-h-[80vh] overflow-y-auto">
                     {/* 1. Task Details */}
                     <div className="space-y-2">
                         <h4 className="text-xs uppercase tracking-wider text-slate-500 font-bold">Created info</h4>
@@ -175,6 +186,18 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                                 </>
                             )}
                         </div>
+                    </div>
+
+                    {/* 4. Comments */}
+                    <div className="space-y-2">
+                        <h4 className="text-xs uppercase tracking-wider text-slate-500 font-bold">Comments</h4>
+                        <textarea
+                            value={commentText}
+                            onChange={handleCommentChange}
+                            placeholder="Add comments here..."
+                            className="w-full h-24 bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-slate-200 text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all resize-none"
+                            aria-label="Task comments"
+                        />
                     </div>
                 </div>
 
