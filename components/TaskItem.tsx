@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Task, TaskStatus, Profile } from '../types.ts';
-import { TrashIcon, StarIcon, InfoIcon } from './icons.tsx';
+import { TrashIcon, StarIcon, InfoIcon, CommentIcon } from './icons.tsx';
 import { isTimeTrackingEnabled } from '../constants.ts';
 import { TaskDetailModal } from './TaskDetailModal.tsx';
 
@@ -139,6 +139,11 @@ export const TaskItem: React.FC<TaskItemProps> = ({ task, onUpdateTask, onDelete
                     </div>
                     
                     <div className="flex items-center gap-0.5">
+                        {task.comments && (
+                            <div className="p-px text-slate-400" title={task.comments}>
+                                <CommentIcon />
+                            </div>
+                        )}
                         <button
                             onClick={() => setIsModalOpen(true)}
                             className="p-px text-slate-400 hover:text-blue-400 hover:bg-slate-600/50 rounded-full transition-colors"
