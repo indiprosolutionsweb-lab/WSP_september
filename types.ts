@@ -40,6 +40,7 @@ export interface Task {
   is_priority: boolean;
   created_at: string;
   created_by?: string; // ID of the user who created the task
+  comments: string | null;
 }
 
 export interface UnplannedTask {
