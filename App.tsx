@@ -185,9 +185,9 @@ const App: React.FC = () => {
         }
     }, [session]);
 
-    // Fetch tasks for the specific user being viewed, lazily by week.
+    // Fetch tasks for the specific user being viewed, lazily by week or range.
     useEffect(() => {
-        if (!viewingUser || currentWeek === 0) {
+        if (!viewingUser) {
             setViewingUserTasks([]);
             setLoadedWeeks(new Set());
             viewingUserIdRef.current = null;
@@ -195,72 +195,77 @@ const App: React.FC = () => {
             return;
         }
 
-        const fetchKey = `${viewingUser.id}-${currentWeek}`;
-        if (fetchingWeeksRef.current.has(fetchKey)) return;
-
         const userHasChanged = viewingUser.id !== viewingUserIdRef.current;
 
-        // If the user has changed, we must reset everything and load the first week.
+        // Reset if user changed
         if (userHasChanged) {
             viewingUserIdRef.current = viewingUser.id;
-            fetchingWeeksRef.current.add(fetchKey);
-
             setIsTasksLoading(true);
             setViewingUserTasks([]);
-            setLoadedWeeks(new Set()); // Clear loaded weeks for new user
-
-            apiClient.from('tasks').select('*').eq('user_id', viewingUser.id).eq('week_number', currentWeek)
-                .then(({ data, error }) => {
-                    // Guard: If user changed during fetch, ignore result
-                    if (viewingUserIdRef.current !== viewingUser.id) return;
-
-                    if (error) {
-                        console.error(`Error fetching initial tasks for user ${viewingUser.id}:`, error);
-                        setLoadedWeeks(new Set()); // Ensure reset on error
-                        setViewingUserTasks([]);
-                    } else {
-                        setViewingUserTasks(data || []);
-                        setLoadedWeeks(new Set([currentWeek]));
-                    }
-                })
-                .finally(() => {
-                    fetchingWeeksRef.current.delete(fetchKey);
-                    if (viewingUserIdRef.current === viewingUser.id) {
-                        setIsTasksLoading(false);
-                    }
-                });
-            return; // Exit after handling user change
+            setLoadedWeeks(new Set());
+            fetchingWeeksRef.current.clear();
         }
 
-        // If it's the same user, check if the current week's tasks need to be loaded.
-        if (!loadedWeeks.has(currentWeek)) {
-            fetchingWeeksRef.current.add(fetchKey);
-            setIsTasksLoading(true);
-            apiClient.from('tasks').select('*').eq('user_id', viewingUser.id).eq('week_number', currentWeek)
-                .then(({ data, error }) => {
-                    // Guard: If user changed during fetch, ignore result
-                    if (viewingUserIdRef.current !== viewingUser.id) return;
-
-                    if (error) {
-                        console.error(`Error fetching tasks for week ${currentWeek}:`, error);
-                    } else {
-                        setViewingUserTasks(prevTasks => {
-                            // Filter out duplicates just in case race conditions occur
-                            const existingIds = new Set(prevTasks.map(t => t.id));
-                            const newTasks = (data || []).filter(t => !existingIds.has(t.id));
-                            return [...prevTasks, ...newTasks];
-                        });
-                        setLoadedWeeks(prev => new Set(prev).add(currentWeek));
-                    }
-                })
-                .finally(() => {
-                    fetchingWeeksRef.current.delete(fetchKey);
-                    if (viewingUserIdRef.current === viewingUser.id) {
-                        setIsTasksLoading(false);
-                    }
-                });
+        // Determine which weeks we need right now
+        const targetWeeks: number[] = [];
+        if (currentView === 'dashboard' || currentView === 'tasks-list') {
+            for (let w = weekRange.start; w <= weekRange.end; w++) {
+                targetWeeks.push(w);
+            }
+        } else if (currentWeek > 0) {
+            targetWeeks.push(currentWeek);
         }
-    }, [viewingUser, currentWeek, loadedWeeks]); // Added loadedWeeks to dependency array for correctness, though logic handles it
+
+        // Filter for weeks not yet loaded and not currently being fetched
+        const missingWeeks = targetWeeks.filter(w => 
+            w > 0 && 
+            !loadedWeeks.has(w) && 
+            !fetchingWeeksRef.current.has(`${viewingUser.id}-${w}`)
+        );
+
+        if (missingWeeks.length === 0) {
+            if (userHasChanged) setIsTasksLoading(false);
+            return;
+        }
+
+        // Mark as fetching
+        missingWeeks.forEach(w => fetchingWeeksRef.current.add(`${viewingUser.id}-${w}`));
+        
+        // Show loader if it's the first time or a user change
+        if (userHasChanged || loadedWeeks.size === 0) setIsTasksLoading(true);
+
+        // Fetch missing weeks in one query
+        apiClient.from('tasks')
+            .select('*')
+            .eq('user_id', viewingUser.id)
+            .in('week_number', missingWeeks)
+            .then(({ data, error }) => {
+                // Guard: If user changed during fetch, ignore result
+                if (viewingUserIdRef.current !== viewingUser.id) return;
+
+                if (error) {
+                    console.error(`Error fetching tasks for weeks ${missingWeeks.join(',')}:`, error);
+                } else {
+                    setViewingUserTasks(prevTasks => {
+                        const existingIds = new Set(prevTasks.map(t => t.id));
+                        const newTasks = (data || []).filter(t => !existingIds.has(t.id));
+                        return [...prevTasks, ...newTasks];
+                    });
+                    setLoadedWeeks(prev => {
+                        const next = new Set(prev);
+                        missingWeeks.forEach(w => next.add(w));
+                        return next;
+                    });
+                }
+            })
+            .finally(() => {
+                missingWeeks.forEach(w => fetchingWeeksRef.current.delete(`${viewingUser.id}-${w}`));
+                if (viewingUserIdRef.current === viewingUser.id) {
+                    setIsTasksLoading(false);
+                }
+            });
+
+    }, [viewingUser, currentWeek, loadedWeeks, currentView, weekRange]); 
     
     useEffect(() => {
         const fetchUnplannedTasks = async (userId: string) => {
@@ -358,7 +363,7 @@ const App: React.FC = () => {
             setCurrentWeek(newCurrentWeek);
 
             // Also reset the dashboard range to the new current week
-            if (currentView === 'dashboard') {
+            if (currentView === 'dashboard' || currentView === 'tasks-list') {
                 setWeekRange({ start: newCurrentWeek, end: newCurrentWeek });
             }
         }
@@ -630,7 +635,7 @@ const App: React.FC = () => {
         if (currentView === 'management' && permissions.canManageUsers) return <ManagementView companies={companies} currentUser={currentUserProfile} onAddCompany={handleAddCompany} onDeleteCompany={handleDeleteCompany} onUpdateUserProfile={handleUpdateUserProfile} onDeleteUser={handleDeleteUser} onCreateUser={handleCreateUser} />;
         if (currentView === 'tasks-list' && viewingUser) {
             if (!permissions.canAccessPersonalViews) return <div className="flex-grow flex items-center justify-center text-xl text-slate-400">You do not have permission to view this page.</div>;
-            return <TasksListView userTasks={viewingUserTasks} viewingUser={viewingUser} initialWeek={currentWeek} />;
+            return <TasksListView userTasks={viewingUserTasks} viewingUser={viewingUser} weekRange={weekRange} setWeekRange={setWeekRange} />;
         }
         if (currentUserProfile.role === Role.Superadmin && !viewingUser) return <div className="flex flex-col flex-grow items-center justify-center"><div className="text-center p-10 bg-slate-800 rounded-xl border border-slate-700"><h2 className="text-2xl font-bold text-slate-200">Welcome, Super Admin!</h2><p className="mt-4 text-slate-400">There are no other users to view. Go to 'Management' to add companies and users.</p></div></div>;
         if (!viewingUser) return <div className="flex items-center justify-center h-full text-2xl font-semibold text-slate-400">Loading user data...</div>;
@@ -676,7 +681,7 @@ const App: React.FC = () => {
             />
             <main className="flex flex-col flex-grow w-full max-w-screen-2xl mx-auto">
                 <div className="flex-shrink-0">
-                    {(currentView === 'board' || currentView === 'dashboard') && viewingUser && (
+                    {(currentView === 'board' || currentView === 'dashboard' || currentView === 'tasks-list') && viewingUser && (
                         <div className="relative flex flex-col sm:flex-row flex-wrap items-center justify-center bg-slate-800/80 backdrop-blur-sm rounded-lg mb-4 p-1 gap-2 border border-slate-700">
                             {currentView === 'board' ? <WeekSelector currentWeek={currentWeek} setCurrentWeek={setCurrentWeek} /> : <WeekRangeSelector weekRange={weekRange} setWeekRange={setWeekRange} />}
                             <div className="sm:absolute sm:right-2 sm:top-1/2 sm:-translate-y-1/2">
