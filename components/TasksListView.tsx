@@ -8,12 +8,12 @@ import { DAYS, isTimeTrackingEnabled } from '../constants.ts';
 interface TasksListViewProps {
     userTasks: Task[];
     viewingUser: Profile;
-    initialWeek: number;
+    weekRange: { start: number; end: number };
+    setWeekRange: (range: { start: number; end: number }) => void;
 }
 
-export const TasksListView: React.FC<TasksListViewProps> = ({ userTasks, viewingUser, initialWeek }) => {
+export const TasksListView: React.FC<TasksListViewProps> = ({ userTasks, viewingUser, weekRange, setWeekRange }) => {
     const [statusFilter, setStatusFilter] = useState<TaskStatus | 'all'>('all');
-    const [weekRange, setWeekRange] = useState({ start: initialWeek, end: initialWeek });
 
     const filteredTasks = useMemo(() => {
         return userTasks
@@ -37,13 +37,15 @@ export const TasksListView: React.FC<TasksListViewProps> = ({ userTasks, viewing
             <h2 className="text-3xl font-bold text-slate-200 mb-6 text-center">Tasks List for {viewingUser.name}</h2>
             <div className="flex flex-col md:flex-row items-center justify-center gap-4 mb-6 bg-slate-700 p-4 rounded-lg shadow-lg">
                 <div className="flex items-center gap-2">
-                    <label htmlFor="status-filter" className="font-semibold text-slate-300">Status:</label>
+                    <label htmlFor="status-filter" className="font-semibold text-slate-300">Status Filter:</label>
                     <select id="status-filter" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as TaskStatus | 'all')} className="bg-slate-700 border border-slate-600 rounded-md px-3 py-1.5 text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <option value="all">All</option>
+                        <option value="all">All Statuses</option>
                         {Object.values(TaskStatus).map(status => <option key={status} value={status}>{status}</option>)}
                     </select>
                 </div>
-                <WeekRangeSelector weekRange={weekRange} setWeekRange={setWeekRange} />
+                <div className="text-slate-400 text-sm italic">
+                    Use the range selector above to adjust weeks.
+                </div>
             </div>
             <div className="flex-grow overflow-y-auto pr-2 -mr-2">
                 {filteredTasks.length > 0 ? (
@@ -60,7 +62,7 @@ export const TasksListView: React.FC<TasksListViewProps> = ({ userTasks, viewing
                 ) : (
                     <div className="text-center py-10 text-slate-400 bg-slate-700 rounded-lg">
                         <p className="text-lg">No tasks found for the selected criteria.</p>
-                        <p className="mt-2">Try adjusting the status or week range filters.</p>
+                        <p className="mt-2">Try adjusting the status filter or the week range in the header.</p>
                     </div>
                 )}
             </div>
