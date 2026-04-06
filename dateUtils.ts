@@ -25,26 +25,31 @@ export const getFinancialYearDetailsForDate = (d: Date, startMonth: 'January' | 
     
     let financialYearStart: Date;
     let financialYearLabel: string;
+    let financialYearShort: string;
 
     if (today < startForThisCalendarYear) {
         // Belongs to the previous financial year
         financialYearStart = getFinancialYearStartDate(currentYear - 1, startMonth, companyName);
         if (startMonth === 'January') {
              financialYearLabel = `Jan ${currentYear - 1} - Dec ${currentYear - 1}`;
+             financialYearShort = `${currentYear - 1}`;
         } else {
              financialYearLabel = `April ${currentYear - 1} - March ${currentYear}`;
+             financialYearShort = `${currentYear - 1}-${currentYear}`;
         }
     } else {
         // Belongs to the current financial year
         financialYearStart = startForThisCalendarYear;
          if (startMonth === 'January') {
              financialYearLabel = `Jan ${currentYear} - Dec ${currentYear}`;
+             financialYearShort = `${currentYear}`;
         } else {
              financialYearLabel = `April ${currentYear} - March ${currentYear + 1}`;
+             financialYearShort = `${currentYear}-${currentYear + 1}`;
         }
     }
 
-    return { financialYearStart, financialYearLabel };
+    return { financialYearStart, financialYearLabel, financialYearShort };
 };
 
 export const getWeekNumber = (d: Date, startMonth: 'January' | 'April', companyName?: string): number => {
