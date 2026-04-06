@@ -42,7 +42,10 @@ const App: React.FC = () => {
     });
 
     const [currentFinancialYear, setCurrentFinancialYear] = useState<string>(() => {
-        return sessionStorage.getItem('wsp_current_year') || '2025-2026';
+        const saved = sessionStorage.getItem('wsp_current_year');
+        if (saved) return saved;
+        const { financialYearShort } = getFinancialYearDetailsForDate(new Date(), 'April');
+        return financialYearShort;
     });
     
     const [currentWeek, setCurrentWeek] = useState<number>(() => {
@@ -126,8 +129,8 @@ const App: React.FC = () => {
             const { financialYearShort, financialYearStart } = getFinancialYearDetailsForDate(new Date(), userCalendarStart, userCompany?.name);
             const newCurrentWeek = getWeekNumber(new Date(), userCalendarStart, userCompany?.name);
             
-            // Only update year if not already set from session storage
-            if (!sessionStorage.getItem('wsp_current_year')) {
+            // If this is a fresh load (currentWeek === 0), ensure the year matches the user's company settings
+            if (!sessionStorage.getItem('wsp_current_week')) {
                 setCurrentFinancialYear(financialYearShort);
             }
             
