@@ -33,6 +33,7 @@ export interface Task {
   id: string;
   user_id: string;
   week_number: number;
+  financial_year: string;
   day: Day;
   text: string;
   status: TaskStatus;
