@@ -8,6 +8,7 @@ interface DashboardProps {
     startWeek: number;
     endWeek: number;
     viewingUser: Profile;
+    financialYear: string;
 }
 
 const statusInfo = {
@@ -42,7 +43,7 @@ const formatTime = (totalMinutes: number): string => {
     return `${hoursStr}${minutesStr}`.trim();
 };
 
-export const Dashboard: React.FC<DashboardProps> = ({ startWeek, endWeek, viewingUser }) => {
+export const Dashboard: React.FC<DashboardProps> = ({ startWeek, endWeek, viewingUser, financialYear }) => {
     const [stats, setStats] = useState<TaskStats | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -58,6 +59,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ startWeek, endWeek, viewin
                 p_user_id: viewingUser.id,
                 p_start_week: startWeek,
                 p_end_week: endWeek,
+                p_financial_year: financialYear,
             });
 
             if (rpcError) {
@@ -71,7 +73,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ startWeek, endWeek, viewin
         };
 
         fetchStats();
-    }, [startWeek, endWeek, viewingUser]);
+    }, [startWeek, endWeek, viewingUser, financialYear]);
 
     const title = startWeek === endWeek 
         ? `Week ${startWeek} Analysis for ${viewingUser.name}`
