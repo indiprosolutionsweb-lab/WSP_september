@@ -40,6 +40,10 @@ const App: React.FC = () => {
         const validViews = ['board', 'dashboard', 'focus', 'management', 'calendar', 'upcoming', 'tasks-list'];
         return (saved && validViews.includes(saved) ? saved : 'board') as 'board' | 'dashboard' | 'focus' | 'management' | 'calendar' | 'upcoming' | 'tasks-list';
     });
+
+    const [currentFinancialYear, setCurrentFinancialYear] = useState<string>(() => {
+        return sessionStorage.getItem('wsp_current_year') || '2025-2026';
+    });
     
     const [currentWeek, setCurrentWeek] = useState<number>(() => {
         const saved = sessionStorage.getItem('wsp_current_week');
@@ -61,6 +65,7 @@ const App: React.FC = () => {
     const [isPasswordRecovery, setIsPasswordRecovery] = useState<boolean>(false);
     const isPerformingAdminActionRef = useRef(false); // Ref to prevent session switch during admin actions
     const viewingUserIdRef = useRef<string | null>(null); // Ref to track viewing user changes for lazy loading
+    const currentYearRef = useRef<string>(currentFinancialYear); // Ref to track year changes for lazy loading
     const fetchingWeeksRef = useRef<Set<string>>(new Set()); // Ref to track in-flight fetch requests to prevent duplicates
 
     // Derived state for calendar settings based on the user being viewed
@@ -109,12 +114,23 @@ const App: React.FC = () => {
         sessionStorage.setItem('wsp_current_view', currentView);
     }, [currentView]);
 
+    useEffect(() => {
+        sessionStorage.setItem('wsp_current_year', currentFinancialYear);
+    }, [currentFinancialYear]);
+
     // Calculate initial week only if not already set from session storage
     useEffect(() => {
         if (currentWeek === 0 && viewingUser && companies.length > 0) {
             const userCompany = companies.find(c => c.id === viewingUser.company_id);
             const userCalendarStart = userCompany?.calendar_start_month || 'April';
+            const { financialYearShort, financialYearStart } = getFinancialYearDetailsForDate(new Date(), userCalendarStart, userCompany?.name);
             const newCurrentWeek = getWeekNumber(new Date(), userCalendarStart, userCompany?.name);
+            
+            // Only update year if not already set from session storage
+            if (!sessionStorage.getItem('wsp_current_year')) {
+                setCurrentFinancialYear(financialYearShort);
+            }
+            
             setCurrentWeek(newCurrentWeek);
             setWeekRange({ start: newCurrentWeek, end: newCurrentWeek });
         }
@@ -191,20 +207,28 @@ const App: React.FC = () => {
             setViewingUserTasks([]);
             setLoadedWeeks(new Set());
             viewingUserIdRef.current = null;
+            currentYearRef.current = currentFinancialYear;
             fetchingWeeksRef.current.clear();
             return;
         }
 
         const userHasChanged = viewingUser.id !== viewingUserIdRef.current;
+        const yearHasChanged = currentYearRef.current !== currentFinancialYear;
+        
+        const shouldReset = userHasChanged || yearHasChanged;
 
-        // Reset if user changed
-        if (userHasChanged) {
+        // Reset if user or year changed
+        if (shouldReset) {
             viewingUserIdRef.current = viewingUser.id;
+            currentYearRef.current = currentFinancialYear;
             setIsTasksLoading(true);
             setViewingUserTasks([]);
             setLoadedWeeks(new Set());
             fetchingWeeksRef.current.clear();
         }
+
+        // Use a local set if we just reset, because the state 'loadedWeeks' won't be empty yet
+        const currentLoadedWeeks = shouldReset ? new Set<number>() : loadedWeeks;
 
         // Determine which weeks we need right now
         const targetWeeks: number[] = [];
@@ -219,12 +243,12 @@ const App: React.FC = () => {
         // Filter for weeks not yet loaded and not currently being fetched
         const missingWeeks = targetWeeks.filter(w => 
             w > 0 && 
-            !loadedWeeks.has(w) && 
+            !currentLoadedWeeks.has(w) && 
             !fetchingWeeksRef.current.has(`${viewingUser.id}-${w}`)
         );
 
         if (missingWeeks.length === 0) {
-            if (userHasChanged) setIsTasksLoading(false);
+            if (shouldReset) setIsTasksLoading(false);
             return;
         }
 
@@ -238,6 +262,7 @@ const App: React.FC = () => {
         apiClient.from('tasks')
             .select('*')
             .eq('user_id', viewingUser.id)
+            .eq('financial_year', currentFinancialYear)
             .in('week_number', missingWeeks)
             .then(({ data, error }) => {
                 // Guard: If user changed during fetch, ignore result
@@ -265,7 +290,7 @@ const App: React.FC = () => {
                 }
             });
 
-    }, [viewingUser, currentWeek, loadedWeeks, currentView, weekRange]); 
+    }, [viewingUser, currentWeek, currentView, weekRange, currentFinancialYear]); 
     
     useEffect(() => {
         const fetchUnplannedTasks = async (userId: string) => {
@@ -305,10 +330,21 @@ const App: React.FC = () => {
         }
     }, [viewingUser]);
 
-    const { financialYearStart, financialYearLabel } = useMemo(
-        () => getFinancialYearDetailsForDate(new Date(), calendarStartMonth, viewingCompany?.name),
-        [calendarStartMonth, viewingCompany]
-    );
+    const { financialYearStart, financialYearLabel } = useMemo(() => {
+        if (!viewingUser) return { financialYearStart: new Date(), financialYearLabel: '' };
+        
+        // If currentFinancialYear is "2025-2026", we want a date in that range to get the details.
+        // We can just use the first year of the string (e.g., 2025) and the company's start month.
+        const yearPart = parseInt(currentFinancialYear.split('-')[0], 10);
+        const userCompany = companies.find(c => c.id === viewingUser.company_id);
+        const startMonth = userCompany?.calendar_start_month || 'April';
+        
+        // Create a date that is guaranteed to be in that financial year.
+        // If it starts in April, July of that year is safe. If it starts in Jan, July is also safe.
+        const sampleDate = new Date(yearPart, 6, 1); 
+        
+        return getFinancialYearDetailsForDate(sampleDate, startMonth, userCompany?.name);
+    }, [currentFinancialYear, viewingUser, companies]);
 
     const handleLogout = async () => {
         sessionStorage.removeItem('wsp_current_week');
@@ -359,7 +395,10 @@ const App: React.FC = () => {
             // When switching users, recalculate the current week based on the new user's company calendar.
             const userCompany = companies.find(c => c.id === userToView.company_id);
             const userCalendarStart = userCompany?.calendar_start_month || 'April'; // Default to April if no company
+            const { financialYearShort } = getFinancialYearDetailsForDate(new Date(), userCalendarStart, userCompany?.name);
             const newCurrentWeek = getWeekNumber(new Date(), userCalendarStart, userCompany?.name);
+            
+            setCurrentFinancialYear(financialYearShort);
             setCurrentWeek(newCurrentWeek);
 
             // Also reset the dashboard range to the new current week
@@ -367,6 +406,13 @@ const App: React.FC = () => {
                 setWeekRange({ start: newCurrentWeek, end: newCurrentWeek });
             }
         }
+    };
+
+    const handleSetFinancialYear = (year: string) => {
+        setCurrentFinancialYear(year);
+        // When switching years, we might want to reset the week to 1 if it's a future year, 
+        // or just keep the current week if it's the current year.
+        // For simplicity, let's keep the current week number, but the user might want more logic here.
     };
 
     const handleSetCurrentView = (view: 'board' | 'dashboard' | 'focus' | 'management' | 'calendar' | 'upcoming' | 'tasks-list') => {
@@ -382,6 +428,7 @@ const App: React.FC = () => {
         const newTaskPayload = { 
             user_id: userId, 
             week_number: week, 
+            financial_year: currentFinancialYear,
             day: day, 
             text: taskText, 
             status: TaskStatus.Incomplete, 
@@ -502,6 +549,7 @@ const App: React.FC = () => {
         const newPlannedTaskPayload = { 
             user_id: taskToPlan.user_id, 
             week_number: week, 
+            financial_year: currentFinancialYear,
             day: day, 
             text: taskToPlan.text, 
             status: taskToPlan.status, 
@@ -615,14 +663,14 @@ const App: React.FC = () => {
         if (currentView === 'focus') return `Viewing ${isViewingOwn ? 'your' : `${viewingUser?.name}'s`} personal focus notes.`;
         if (currentView === 'management') return "You are in the system management view.";
         if (!viewingUser) return "Select a user to begin.";
-        if (currentView === 'tasks-list') return `You are viewing a filterable list of tasks for ${viewingUser.name}.`;
-        if (currentView === 'dashboard') return `Viewing analysis for Weeks ${weekRange.start}-${weekRange.end} for ${viewingUser.name}.`;
-        return `You are viewing Week ${currentWeek} / ${TOTAL_WEEKS} for ${viewingUser.name}.`;
-    }, [currentView, currentWeek, weekRange, viewingUser, currentUserProfile]);
+        if (currentView === 'tasks-list') return `You are viewing a filterable list of tasks for ${viewingUser.name} in ${currentFinancialYear}.`;
+        if (currentView === 'dashboard') return `Viewing analysis for Weeks ${weekRange.start}-${weekRange.end} for ${viewingUser.name} in ${currentFinancialYear}.`;
+        return `You are viewing Week ${currentWeek} / ${TOTAL_WEEKS} for ${viewingUser.name} in ${currentFinancialYear}.`;
+    }, [currentView, currentWeek, weekRange, viewingUser, currentUserProfile, currentFinancialYear]);
     
     const renderContent = () => {
         if (isTasksLoading && viewingUser) {
-            return <div className="flex-grow flex items-center justify-center text-xl text-slate-400">Loading tasks for {viewingUser.name}...</div>;
+            return <div className="flex-grow flex items-center justify-center text-xl text-slate-400">Loading tasks for {viewingUser.name} in {currentFinancialYear}...</div>;
         }
         if (currentView === 'upcoming') {
             if (!permissions.canAccessPersonalViews) return <div className="flex-grow flex items-center justify-center text-xl text-slate-400">You do not have permission to view this page.</div>;
@@ -635,7 +683,7 @@ const App: React.FC = () => {
         if (currentView === 'management' && permissions.canManageUsers) return <ManagementView companies={companies} currentUser={currentUserProfile} onAddCompany={handleAddCompany} onDeleteCompany={handleDeleteCompany} onUpdateUserProfile={handleUpdateUserProfile} onDeleteUser={handleDeleteUser} onCreateUser={handleCreateUser} />;
         if (currentView === 'tasks-list' && viewingUser) {
             if (!permissions.canAccessPersonalViews) return <div className="flex-grow flex items-center justify-center text-xl text-slate-400">You do not have permission to view this page.</div>;
-            return <TasksListView userTasks={viewingUserTasks} viewingUser={viewingUser} weekRange={weekRange} setWeekRange={setWeekRange} />;
+            return <TasksListView userTasks={viewingUserTasks} viewingUser={viewingUser} weekRange={weekRange} setWeekRange={setWeekRange} financialYear={currentFinancialYear} />;
         }
         if (currentUserProfile.role === Role.Superadmin && !viewingUser) return <div className="flex flex-col flex-grow items-center justify-center"><div className="text-center p-10 bg-slate-800 rounded-xl border border-slate-700"><h2 className="text-2xl font-bold text-slate-200">Welcome, Super Admin!</h2><p className="mt-4 text-slate-400">There are no other users to view. Go to 'Management' to add companies and users.</p></div></div>;
         if (!viewingUser) return <div className="flex items-center justify-center h-full text-2xl font-semibold text-slate-400">Loading user data...</div>;
@@ -654,7 +702,7 @@ const App: React.FC = () => {
                     onMoveToUpcoming={handleMovePlannedToUnplanned}
                 />
             )}
-            {currentView === 'dashboard' && <Dashboard startWeek={weekRange.start} endWeek={weekRange.end} viewingUser={viewingUser} />}
+            {currentView === 'dashboard' && <Dashboard startWeek={weekRange.start} endWeek={weekRange.end} viewingUser={viewingUser} financialYear={currentFinancialYear} />}
             {currentView === 'calendar' && <YearCalendarView financialYearStartDate={financialYearStart} financialYearString={financialYearLabel} />}
         </>;
     }
@@ -676,6 +724,8 @@ const App: React.FC = () => {
                 onSelectViewUser={handleSetViewingUser}
                 currentView={currentView}
                 onSetCurrentView={handleSetCurrentView}
+                currentFinancialYear={currentFinancialYear}
+                onSetFinancialYear={handleSetFinancialYear}
                 canManageUsers={permissions.canManageUsers}
                 canAccessPersonalViews={permissions.canAccessPersonalViews}
             />
