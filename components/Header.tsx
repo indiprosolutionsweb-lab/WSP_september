@@ -26,15 +26,19 @@ interface HeaderProps {
     onSelectViewUser: (userId: string) => void;
     currentView: ViewType;
     onSetCurrentView: (view: ViewType) => void;
+    currentFinancialYear: string;
+    onSetFinancialYear: (year: string) => void;
     canManageUsers: boolean;
     canAccessPersonalViews: boolean;
 }
 
-export const Header: React.FC<HeaderProps> = ({ currentUser, viewingUser, companies, viewableUsers, onLogout, onSelectViewUser, currentView, onSetCurrentView, canManageUsers, canAccessPersonalViews }) => {
+export const Header: React.FC<HeaderProps> = ({ currentUser, viewingUser, companies, viewableUsers, onLogout, onSelectViewUser, currentView, onSetCurrentView, currentFinancialYear, onSetFinancialYear, canManageUsers, canAccessPersonalViews }) => {
     const [companyFilter, setCompanyFilter] = useState<string>('all');
     const [isFullscreen, setIsFullscreen] = useState(false);
     
     const isSuperAdmin = currentUser.role === Role.Superadmin;
+
+    const financialYears = ['2024-2025', '2025-2026', '2026-2027', '2027-2028'];
 
     useEffect(() => {
         const handleFullscreenChange = () => setIsFullscreen(!!(document.fullscreenElement || (document as DocumentWithFullscreen).webkitFullscreenElement || (document as DocumentWithFullscreen).mozFullScreenElement));
@@ -91,6 +95,12 @@ export const Header: React.FC<HeaderProps> = ({ currentUser, viewingUser, compan
                     {canManageUsers && <NavButton view="management" label="Management" colorClass="purple" />}
                 </nav>
                 <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-end gap-3 flex-wrap">
+                    <div className="flex items-center gap-2">
+                        <label htmlFor="year-selector" className="font-semibold text-slate-300">Year:</label>
+                        <select id="year-selector" value={currentFinancialYear} onChange={(e) => onSetFinancialYear(e.target.value)} className="bg-slate-700 border border-slate-600 rounded-md px-2 py-1 text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            {financialYears.map(y => <option key={y} value={y}>{y}</option>)}
+                        </select>
+                    </div>
                     <span className="font-semibold text-slate-300 hidden sm:inline">Welcome, {currentUser.name}</span>
                     <button onClick={() => onSetCurrentView('calendar')} className={`p-1.5 rounded-full transition-colors ${currentView === 'calendar' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-slate-600'}`} title="Open year calendar"><CalendarIcon /></button>
                     <button onClick={toggleFullscreen} className="p-1.5 rounded-full text-slate-400 hover:bg-slate-600" title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}>{isFullscreen ? <CollapseIcon /> : <ExpandIcon />}</button>
