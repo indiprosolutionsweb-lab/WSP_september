@@ -10,9 +10,10 @@ interface TasksListViewProps {
     viewingUser: Profile;
     weekRange: { start: number; end: number };
     setWeekRange: (range: { start: number; end: number }) => void;
+    financialYear: string;
 }
 
-export const TasksListView: React.FC<TasksListViewProps> = ({ userTasks, viewingUser, weekRange, setWeekRange }) => {
+export const TasksListView: React.FC<TasksListViewProps> = ({ userTasks, viewingUser, weekRange, setWeekRange, financialYear }) => {
     const [statusFilter, setStatusFilter] = useState<TaskStatus | 'all'>('all');
 
     const filteredTasks = useMemo(() => {
@@ -34,7 +35,7 @@ export const TasksListView: React.FC<TasksListViewProps> = ({ userTasks, viewing
 
     return (
         <div className="bg-slate-800 rounded-xl p-6 md:p-8 mt-4 flex-grow flex flex-col border border-slate-700">
-            <h2 className="text-3xl font-bold text-slate-200 mb-6 text-center">Tasks List for {viewingUser.name}</h2>
+            <h2 className="text-3xl font-bold text-slate-200 mb-6 text-center">Tasks List for {viewingUser.name} ({financialYear})</h2>
             <div className="flex flex-col md:flex-row items-center justify-center gap-4 mb-6 bg-slate-700 p-4 rounded-lg shadow-lg">
                 <div className="flex items-center gap-2">
                     <label htmlFor="status-filter" className="font-semibold text-slate-300">Status Filter:</label>
