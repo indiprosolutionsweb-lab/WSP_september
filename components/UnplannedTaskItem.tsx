@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { UnplannedTask, TaskStatus, Day } from '../types.ts';
 import { TrashIcon, StarIcon } from './icons.tsx';
-import { DAYS, TOTAL_WEEKS, isTimeTrackingEnabled } from '../constants.ts';
+import { DAYS, TOTAL_WEEKS } from '../constants.ts';
 
 interface UnplannedTaskItemProps {
     task: UnplannedTask;
@@ -56,7 +56,6 @@ export const UnplannedTaskItem: React.FC<UnplannedTaskItemProps> = ({ task, onUp
                      <select value={task.status} onChange={(e) => onUpdateTask({ ...task, status: e.target.value as TaskStatus })} className={`rounded px-1 py-0.5 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-slate-500 ${statusStyles[task.status].select}`} aria-label="Task status">
                         {Object.values(TaskStatus).map(status => <option key={status} value={status} className="bg-slate-700 text-slate-200">{status}</option>)}
                     </select>
-                    {isTimeTrackingEnabled && <input type="number" value={task.time_taken || ''} onChange={(e) => onUpdateTask({ ...task, time_taken: parseInt(e.target.value, 10) || 0 })} className="w-12 bg-slate-600 rounded text-slate-200 text-center py-0.5 px-1 text-xs" min="0" placeholder="Time" />}
                      <button onClick={() => onUpdateTask({ ...task, is_priority: !task.is_priority })} className={`p-1 rounded-full transition-colors ${task.is_priority ? 'text-yellow-500 hover:text-yellow-400' : 'text-slate-500 hover:text-yellow-500'}`} title="Toggle priority"><StarIcon filled={!!task.is_priority} /></button>
                     <button onClick={() => onDeleteTask(task.id)} className="p-1 text-slate-500 hover:text-red-500 hover:bg-red-900/30 rounded-full" aria-label="Delete task"><TrashIcon /></button>
                 </div>
