@@ -3,6 +3,7 @@ import React, { useMemo } from 'react';
 import { Day, Task, Profile } from '../types.ts';
 import { DAYS } from '../constants.ts';
 import { DayColumn } from './DayColumn.tsx';
+import { getFinancialYearStartDate, getDateForWeekAndDay } from '../dateUtils.ts';
 
 interface TaskBoardProps {
     currentWeek: number;
@@ -14,6 +15,9 @@ interface TaskBoardProps {
     canAddTask: boolean;
     allProfiles: Profile[];
     onMoveToUpcoming: (task: Task) => void;
+    financialYear: string;
+    calendarStartMonth: 'January' | 'April';
+    companyName?: string;
 }
 
 export const TaskBoard: React.FC<TaskBoardProps> = ({ 
@@ -25,9 +29,17 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
     canEditTasks, 
     canAddTask,
     allProfiles,
-    onMoveToUpcoming
+    onMoveToUpcoming,
+    financialYear,
+    calendarStartMonth,
+    companyName
 }) => {
     
+    const financialYearStart = useMemo(() => {
+        const startYear = parseInt(financialYear.split('-')[0], 10);
+        return getFinancialYearStartDate(startYear, calendarStartMonth, companyName);
+    }, [financialYear, calendarStartMonth, companyName]);
+
     const weekTasksByDay = useMemo(() => {
         const tasksForWeek = tasks.filter(task => task.week_number === currentWeek);
         const groupedTasks: { [key in Day]?: Task[] } = {};
@@ -42,20 +54,24 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-2 p-2 md:p-3 lg:p-4 flex-grow min-h-0">
-            {DAYS.map(day => (
-                <DayColumn 
-                    key={day}
-                    day={day}
-                    tasks={weekTasksByDay[day] || []}
-                    onAddTask={(d, taskText) => onAddTask(currentWeek, d, taskText)}
-                    onUpdateTask={onUpdateTask}
-                    onDeleteTask={onDeleteTask}
-                    canEditTasks={canEditTasks}
-                    canAddTask={canAddTask}
-                    allProfiles={allProfiles}
-                    onMoveToUpcoming={onMoveToUpcoming}
-                />
-            ))}
+            {DAYS.map((day, index) => {
+                const date = getDateForWeekAndDay(currentWeek, index, financialYearStart);
+                return (
+                    <DayColumn 
+                        key={day}
+                        day={day}
+                        date={date}
+                        tasks={weekTasksByDay[day] || []}
+                        onAddTask={(d, taskText) => onAddTask(currentWeek, d, taskText)}
+                        onUpdateTask={onUpdateTask}
+                        onDeleteTask={onDeleteTask}
+                        canEditTasks={canEditTasks}
+                        canAddTask={canAddTask}
+                        allProfiles={allProfiles}
+                        onMoveToUpcoming={onMoveToUpcoming}
+                    />
+                );
+            })}
         </div>
     );
 };
