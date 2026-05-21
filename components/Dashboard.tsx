@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { TaskStats, TaskStatus, Profile } from '../types.ts';
-import { isTimeTrackingEnabled } from '../constants.ts';
 import { apiClient } from '../apiClient.ts';
 
 interface DashboardProps {
@@ -33,15 +32,6 @@ const statusInfo = {
 };
 
 const VISIBLE_STATUSES = Object.keys(statusInfo) as (keyof typeof statusInfo)[];
-
-const formatTime = (totalMinutes: number): string => {
-    if (totalMinutes < 1) return '0m';
-    const hours = Math.floor(totalMinutes / 60);
-    const minutes = totalMinutes % 60;
-    const hoursStr = hours > 0 ? `${hours}h` : '';
-    const minutesStr = minutes > 0 ? ` ${minutes}m` : '';
-    return `${hoursStr}${minutesStr}`.trim();
-};
 
 export const Dashboard: React.FC<DashboardProps> = ({ startWeek, endWeek, viewingUser, financialYear }) => {
     const [stats, setStats] = useState<TaskStats | null>(null);
@@ -120,13 +110,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ startWeek, endWeek, viewin
         [TaskStatus.Additional]: stats.additional_count,
     };
 
-    const timeByStatus = {
-        [TaskStatus.Complete]: stats.complete_time,
-        [TaskStatus.Incomplete]: stats.incomplete_time,
-        [TaskStatus.InProgress]: stats.in_progress_time,
-        [TaskStatus.Additional]: stats.additional_time,
-    };
-
     return (
         <div className="bg-slate-800 rounded-xl p-6 md:p-8 border border-slate-700">
             <h2 className="text-3xl font-bold text-slate-200 mb-6 text-center">{title}</h2>
@@ -146,24 +129,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ startWeek, endWeek, viewin
                     </div>
                 ))}
             </div>
-
-            {isTimeTrackingEnabled && (
-                <div className="my-10">
-                    <h3 className="text-2xl font-bold text-slate-200 mb-4 text-center">Time Analysis</h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                         <div className="bg-slate-700 p-6 rounded-lg shadow-lg border-l-4 border-purple-500 lg:col-span-1 sm:col-span-2">
-                            <h3 className="text-xl font-semibold text-purple-400">Total Time Spent</h3>
-                            <p className="text-4xl font-bold text-white mt-2">{formatTime(stats.total_time)}</p>
-                        </div>
-                        {VISIBLE_STATUSES.map(status => (
-                            <div key={status} className={`bg-slate-700 p-6 rounded-lg shadow-lg border-l-4 ${statusInfo[status].borderColor}`}>
-                                <h3 className={`text-xl font-semibold ${statusInfo[status].textColor}`}>Time on {statusInfo[status].label}</h3>
-                                <p className="text-4xl font-bold text-white mt-2">{formatTime(timeByStatus[status])}</p>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
 
             <div>
                 <h3 className="text-2xl font-bold text-slate-200 mb-4 text-center">Task Status Distribution</h3>
