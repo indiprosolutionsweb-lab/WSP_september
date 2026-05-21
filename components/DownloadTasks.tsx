@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Task, Profile, Day, WeekTasks } from '../types.ts';
-import { DAYS, isTimeTrackingEnabled } from '../constants.ts';
+import { DAYS } from '../constants.ts';
 import { DownloadModal } from './DownloadModal.tsx';
 
 interface DownloadTasksProps {
@@ -57,8 +57,7 @@ export const DownloadTasks: React.FC<DownloadTasksProps> = ({ allTasks, viewingU
             csvRows.push(`Week:,${week}`);
             
             const dayHeaders = ["", ...DAYS.flatMap(day => {
-                const base = [escapeCsvField(day), escapeCsvField('Status')];
-                return isTimeTrackingEnabled ? [...base, escapeCsvField('Time (m)')] : base;
+                return [escapeCsvField(day), escapeCsvField('Status')];
             })];
             csvRows.push(dayHeaders.join(","));
 
@@ -82,14 +81,8 @@ export const DownloadTasks: React.FC<DownloadTasksProps> = ({ allTasks, viewingU
                             if (task) {
                                 taskRow.push(escapeCsvField(task.text));
                                 taskRow.push(escapeCsvField(task.status));
-                                if (isTimeTrackingEnabled) {
-                                    taskRow.push(escapeCsvField(task.time_taken));
-                                }
                             } else {
                                 taskRow.push("", "");
-                                if (isTimeTrackingEnabled) {
-                                    taskRow.push("");
-                                }
                             }
                         });
                         csvRows.push(taskRow.join(","));
