@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import { Task, TaskStatus, Profile } from '../types.ts';
 import { TrashIcon, StarIcon, InfoIcon, CommentIcon } from './icons.tsx';
-import { isTimeTrackingEnabled } from '../constants.ts';
 import { TaskDetailModal } from './TaskDetailModal.tsx';
 
 interface TaskItemProps {
@@ -66,11 +65,6 @@ export const TaskItem: React.FC<TaskItemProps> = ({ task, onUpdateTask, onDelete
     const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         onUpdateTask({ ...task, status: e.target.value as TaskStatus });
     };
-
-    const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const time = parseInt(e.target.value, 10);
-        onUpdateTask({ ...task, time_taken: isNaN(time) ? 0 : Math.max(0, time) });
-    };
     
     const handlePriorityToggle = (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -123,19 +117,6 @@ export const TaskItem: React.FC<TaskItemProps> = ({ task, onUpdateTask, onDelete
                                 </option>
                             ))}
                         </select>
-
-                        {isTimeTrackingEnabled && (
-                            <input
-                                type="number"
-                                value={task.time_taken || ''}
-                                onChange={handleTimeChange}
-                                disabled={!canEdit}
-                                className={`w-8 bg-slate-600 rounded text-slate-200 text-center py-px px-0.5 text-[11px] focus:outline-none ${disabledClass}`}
-                                min="0"
-                                placeholder="Time"
-                                aria-label="Time taken in minutes"
-                            />
-                        )}
                     </div>
                     
                     <div className="flex items-center gap-0.5">
