@@ -143,53 +143,114 @@ const App: React.FC = () => {
     useEffect(() => {
         const fetchInitialData = async (userId: string) => {
             try {
-                const { data: companyData, error: companyError } = await apiClient.from('companies').select('*');
-                if (companyError) throw companyError;
-                setCompanies(companyData || []);
+                // 1. Fetch current user's profile first
+                const { data: userProfile, error: userProfileError } = await apiClient
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', userId)
+                    .single();
+                if (userProfileError) throw userProfileError;
 
-                const { data: profileData, error: profileError } = await apiClient.from('profiles').select('*');
-                if (profileError) throw profileError;
-                setAllProfiles(profileData || []);
-                
-                const userProfile = profileData?.find(p => p.id === userId);
-                if (userProfile) {
-                     setCurrentUserProfile(userProfile);
-
-                     // --- START: MODIFIED USER VIEWING LOGIC ---
-                     const savedViewingUserId = sessionStorage.getItem('wsp_viewing_user_id');
-                     const isSuperAdmin = userProfile.role === Role.Superadmin;
-                     const isAdmin = userProfile.role === Role.Admin;
-
-                     const potentialUserToView = savedViewingUserId ? profileData.find(p => p.id === savedViewingUserId) : undefined;
-                     
-                     let userIsValidAndPermitted = false;
-                     if (potentialUserToView) {
-                        if (isSuperAdmin) {
-                            userIsValidAndPermitted = true;
-                        } else if (isAdmin) {
-                            userIsValidAndPermitted = potentialUserToView.company_id === userProfile.company_id;
-                        } else { // is User
-                            userIsValidAndPermitted = potentialUserToView.id === userProfile.id;
-                        }
-                     }
-
-                     if (potentialUserToView && userIsValidAndPermitted) {
-                        setViewingUser(potentialUserToView);
-                     } else {
-                        // Fallback logic
-                        if (isSuperAdmin) {
-                            const firstUserToView = profileData.find(p => p.id !== userProfile.id);
-                            setViewingUser(firstUserToView || null);
-                        } else {
-                            setViewingUser(userProfile);
-                        }
-                     }
-                     // --- END: MODIFIED USER VIEWING LOGIC ---
-
-                } else {
+                if (!userProfile) {
                     console.error("Current user's profile not found!");
                     await apiClient.auth.signOut();
+                    setIsLoaded(true);
+                    return;
                 }
+
+                let companyData: Company[] = [];
+                let profileData: Profile[] = [];
+
+                if (userProfile.role === Role.Superadmin) {
+                    // Superadmin fetches all companies and all profiles
+                    const { data: fetchCompanies, error: companyError } = await apiClient.from('companies').select('*');
+                    if (companyError) throw companyError;
+                    companyData = fetchCompanies || [];
+
+                    const { data: fetchProfiles, error: profileError } = await apiClient.from('profiles').select('*');
+                    if (profileError) throw profileError;
+                    profileData = fetchProfiles || [];
+                } else if (userProfile.role === Role.Admin) {
+                    // Admin only fetches their own company metadata and profiles of their own company
+                    if (userProfile.company_id) {
+                        const { data: fetchCompanies, error: companyError } = await apiClient
+                            .from('companies')
+                            .select('*')
+                            .eq('id', userProfile.company_id);
+                        if (companyError) throw companyError;
+                        companyData = fetchCompanies || [];
+
+                        const { data: fetchProfiles, error: profileError } = await apiClient
+                            .from('profiles')
+                            .select('*')
+                            .eq('company_id', userProfile.company_id);
+                        if (profileError) throw profileError;
+                        profileData = fetchProfiles || [];
+                    } else {
+                        profileData = [userProfile];
+                    }
+                } else {
+                    // Regular user (Role.User) only fetches their own profile and their own company metadata
+                    profileData = [userProfile];
+                    if (userProfile.company_id) {
+                        const { data: fetchCompanies, error: companyError } = await apiClient
+                            .from('companies')
+                            .select('*')
+                            .eq('id', userProfile.company_id);
+                        if (companyError) throw companyError;
+                        companyData = fetchCompanies || [];
+                    }
+                }
+
+                setCompanies(companyData);
+                setAllProfiles(profileData);
+
+                if (userProfile.role !== Role.Superadmin && userProfile.company_id) {
+                    const userCompany = companyData.find(c => c.id === userProfile.company_id);
+                    if (userCompany?.is_paused) {
+                        sessionStorage.setItem('wsp_paused_error', 'true');
+                        await apiClient.auth.signOut();
+                        setSession(null);
+                        setCurrentUserProfile(null);
+                        setViewingUser(null);
+                        setIsLoaded(true);
+                        return;
+                    }
+                }
+
+                setCurrentUserProfile(userProfile);
+
+                // --- START: MODIFIED USER VIEWING LOGIC ---
+                const savedViewingUserId = sessionStorage.getItem('wsp_viewing_user_id');
+                const isSuperAdmin = userProfile.role === Role.Superadmin;
+                const isAdmin = userProfile.role === Role.Admin;
+
+                const potentialUserToView = savedViewingUserId ? profileData.find(p => p.id === savedViewingUserId) : undefined;
+                
+                let userIsValidAndPermitted = false;
+                if (potentialUserToView) {
+                    if (isSuperAdmin) {
+                        userIsValidAndPermitted = true;
+                    } else if (isAdmin) {
+                        userIsValidAndPermitted = potentialUserToView.company_id === userProfile.company_id;
+                    } else { // is User
+                        userIsValidAndPermitted = potentialUserToView.id === userProfile.id;
+                    }
+                }
+
+                if (potentialUserToView && userIsValidAndPermitted) {
+                    setViewingUser(potentialUserToView);
+                } else {
+                    // Fallback logic
+                    if (isSuperAdmin) {
+                        const firstUserToView = profileData.find(p => p.id !== userProfile.id);
+                        setViewingUser(firstUserToView || null);
+                    } else {
+                        setViewingUser(userProfile);
+                    }
+                }
+                // --- END: MODIFIED USER VIEWING LOGIC ---
+
             } catch (error) {
                 console.error("Error fetching initial data:", error);
             } finally {
@@ -603,6 +664,15 @@ const App: React.FC = () => {
         if (error) alert(`Error deleting company: ${error.message}`);
         else setCompanies(prev => prev.filter(c => c.id !== companyId));
     };
+
+    const handleToggleCompanyPause = async (companyId: string, isPaused: boolean) => {
+        const { error } = await apiClient.from('companies').update({ is_paused: isPaused }).eq('id', companyId);
+        if (error) {
+            alert(`Error updating company status: ${error.message}`);
+        } else {
+            setCompanies(prev => prev.map(c => c.id === companyId ? { ...c, is_paused: isPaused } : c));
+        }
+    };
     
     const handleUpdateFocusNote = async (note: { focus_text: string | null; pointers_text: string | null; }) => {
         if (!viewingUser || !permissions.canAccessPersonalViews) return;
@@ -683,7 +753,7 @@ const App: React.FC = () => {
             if (!permissions.canAccessPersonalViews) return <div className="flex-grow flex items-center justify-center text-xl text-slate-400">You do not have permission to view this page.</div>;
             return <FocusView note={focusNote} onSave={handleUpdateFocusNote} />;
         }
-        if (currentView === 'management' && permissions.canManageUsers) return <ManagementView companies={companies} currentUser={currentUserProfile} onAddCompany={handleAddCompany} onDeleteCompany={handleDeleteCompany} onUpdateUserProfile={handleUpdateUserProfile} onDeleteUser={handleDeleteUser} onCreateUser={handleCreateUser} />;
+        if (currentView === 'management' && permissions.canManageUsers) return <ManagementView companies={companies} currentUser={currentUserProfile} onAddCompany={handleAddCompany} onDeleteCompany={handleDeleteCompany} onUpdateUserProfile={handleUpdateUserProfile} onDeleteUser={handleDeleteUser} onCreateUser={handleCreateUser} onToggleCompanyPause={handleToggleCompanyPause} />;
         if (currentView === 'tasks-list' && viewingUser) {
             if (!permissions.canAccessPersonalViews) return <div className="flex-grow flex items-center justify-center text-xl text-slate-400">You do not have permission to view this page.</div>;
             return <TasksListView userTasks={viewingUserTasks} viewingUser={viewingUser} weekRange={weekRange} setWeekRange={setWeekRange} financialYear={currentFinancialYear} />;
@@ -703,6 +773,9 @@ const App: React.FC = () => {
                     canAddTask={permissions.canAddTask}
                     allProfiles={allProfiles}
                     onMoveToUpcoming={handleMovePlannedToUnplanned}
+                    financialYear={currentFinancialYear}
+                    calendarStartMonth={calendarStartMonth}
+                    companyName={viewingCompany?.name}
                 />
             )}
             {currentView === 'dashboard' && <Dashboard startWeek={weekRange.start} endWeek={weekRange.end} viewingUser={viewingUser} financialYear={currentFinancialYear} />}
