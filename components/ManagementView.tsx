@@ -15,6 +15,7 @@ interface ManagementViewProps {
     onUpdateUserProfile: (profile: Profile) => Promise<void>;
     onDeleteUser: (profileId: string) => Promise<void>;
     onCreateUser: (newUser: { name: string; email: string; password: string; role: Role.User | Role.Admin; companyId: string | null }) => Promise<void>;
+    onToggleCompanyPause: (companyId: string, isPaused: boolean) => Promise<void>;
 }
 
 const escapeCsvField = (field: string | null | undefined): string => {
@@ -28,7 +29,7 @@ const escapeCsvField = (field: string | null | undefined): string => {
 
 const USERS_PER_PAGE = 10;
 
-export const ManagementView: React.FC<ManagementViewProps> = ({ companies, currentUser, onAddCompany, onDeleteCompany, onUpdateUserProfile, onDeleteUser, onCreateUser }) => {
+export const ManagementView: React.FC<ManagementViewProps> = ({ companies, currentUser, onAddCompany, onDeleteCompany, onUpdateUserProfile, onDeleteUser, onCreateUser, onToggleCompanyPause }) => {
     const [newCompanyName, setNewCompanyName] = useState('');
     const [newCompanyCalendar, setNewCompanyCalendar] = useState<'January' | 'April'>('April');
 
@@ -298,12 +299,25 @@ export const ManagementView: React.FC<ManagementViewProps> = ({ companies, curre
                         {companies.length > 0 ? companies.map(company => (
                             <div key={company.id} className="flex items-center justify-between bg-slate-800 p-3 rounded-md border border-slate-600">
                                 <div>
-                                    <span className="text-slate-200 font-medium">{company.name}</span>
+                                    <span className="text-slate-200 font-medium">
+                                        {company.name}
+                                        {company.is_paused && (
+                                            <span className="ml-2 inline-flex items-center text-[10px] bg-red-900/50 text-red-300 font-semibold px-2 py-0.5 rounded border border-red-700">Paused</span>
+                                        )}
+                                    </span>
                                     <span className="text-xs text-slate-400 block">FY Starts: {company.calendar_start_month}</span>
                                 </div>
-                                <button onClick={() => openConfirmationModal('company', company.id, company.name)} className="p-1.5 text-slate-500 hover:text-red-500 hover:bg-red-900/30 rounded-full transition-colors" aria-label={`Delete ${company.name}`}>
-                                    <TrashIcon />
-                                </button>
+                                <div className="flex items-center gap-2">
+                                    <button 
+                                        onClick={() => onToggleCompanyPause(company.id, !company.is_paused)} 
+                                        className={`px-3 py-1 rounded text-xs font-semibold transition-colors ${company.is_paused ? 'bg-emerald-600 text-emerald-100 hover:bg-emerald-500' : 'bg-amber-600/80 text-amber-100 hover:bg-amber-500'}`}
+                                    >
+                                        {company.is_paused ? 'Activate' : 'Pause'}
+                                    </button>
+                                    <button onClick={() => openConfirmationModal('company', company.id, company.name)} className="p-1.5 text-slate-500 hover:text-red-500 hover:bg-red-900/30 rounded-full transition-colors" aria-label={`Delete ${company.name}`}>
+                                        <TrashIcon />
+                                    </button>
+                                </div>
                             </div>
                         )) : <p className="text-slate-500 text-center py-4">No companies created yet.</p>}
                     </div>
