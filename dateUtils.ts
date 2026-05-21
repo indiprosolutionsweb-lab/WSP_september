@@ -67,3 +67,12 @@ export const getWeekNumber = (d: Date, startMonth: 'January' | 'April', companyN
 
     return weekNumber > 0 ? weekNumber : 1;
 };
+
+export const getDateForWeekAndDay = (week: number, dayIndex: number, financialYearStart: Date): Date => {
+    const date = new Date(financialYearStart);
+    // Add weeks (week is 1-indexed, so subtract 1)
+    date.setDate(date.getDate() + (week - 1) * 7);
+    // Add days (dayIndex is 0-6 for Mon-Sun)
+    date.setDate(date.getDate() + dayIndex);
+    return date;
+};
