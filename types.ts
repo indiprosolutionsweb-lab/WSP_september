@@ -11,6 +11,7 @@ export interface Company {
   name: string;
   created_at: string;
   calendar_start_month: 'January' | 'April';
+  is_paused?: boolean;
 }
 
 // This represents the public `profiles` table, not the `auth.users` table
