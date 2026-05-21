@@ -6,6 +6,7 @@ import { PlusIcon, SpinnerIcon } from './icons.tsx';
 
 interface DayColumnProps {
     day: Day;
+    date: Date;
     tasks: Task[];
     onAddTask: (day: Day, taskText: string) => Promise<void>;
     onUpdateTask: (updatedTask: Task) => void;
@@ -18,6 +19,7 @@ interface DayColumnProps {
 
 export const DayColumn: React.FC<DayColumnProps> = ({ 
     day, 
+    date,
     tasks, 
     onAddTask, 
     onUpdateTask, 
@@ -52,9 +54,14 @@ export const DayColumn: React.FC<DayColumnProps> = ({
         }
     };
 
+    const formattedDate = date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+
     return (
         <div className="bg-slate-800 rounded-xl p-1.5 flex flex-col h-full min-h-[300px] border border-slate-700/50">
-            <h2 className="text-lg font-semibold text-slate-300 mb-1.5 text-center border-b-2 border-slate-700 pb-1.5">{day}</h2>
+            <h2 className="text-lg font-semibold text-slate-300 mb-1.5 text-center border-b-2 border-slate-700 pb-1.5 flex items-center justify-center gap-2">
+                <span>{day}</span>
+                <span className="text-[10px] font-normal text-slate-500 mt-1 uppercase tracking-wider">{formattedDate}</span>
+            </h2>
             <div className="flex-grow overflow-y-auto pr-1.5">
                 {tasks.map(task => (
                     <TaskItem 
