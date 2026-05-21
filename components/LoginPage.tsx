@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { apiClient } from '../apiClient.ts';
 
 interface LoginPageProps {
@@ -12,6 +12,13 @@ export const LoginPage: React.FC<LoginPageProps> = () => {
     const [error, setError] = useState('');
     const [message, setMessage] = useState('');
     const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        if (sessionStorage.getItem('wsp_paused_error') === 'true') {
+            setError('The account has been paused. Please contact the admin.');
+            sessionStorage.removeItem('wsp_paused_error');
+        }
+    }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
