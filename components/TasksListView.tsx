@@ -3,7 +3,7 @@ import React, { useState, useMemo } from 'react';
 import { Task, TaskStatus, Profile } from '../types.ts';
 import { WeekRangeSelector } from './WeekRangeSelector.tsx';
 import { FilteredTaskItem } from './FilteredTaskItem.tsx';
-import { DAYS, isTimeTrackingEnabled } from '../constants.ts';
+import { DAYS } from '../constants.ts';
 
 interface TasksListViewProps {
     userTasks: Task[];
@@ -31,7 +31,7 @@ export const TasksListView: React.FC<TasksListViewProps> = ({ userTasks, viewing
             });
     }, [userTasks, statusFilter, weekRange]);
 
-    const headerGridCols = isTimeTrackingEnabled ? "grid-cols-[1fr_2fr_6fr_2fr_1fr]" : "grid-cols-[1fr_2fr_7fr_2fr]";
+    const headerGridCols = "grid-cols-[1fr_2fr_7fr_2fr]";
 
     return (
         <div className="bg-slate-800 rounded-xl p-6 md:p-8 mt-4 flex-grow flex flex-col border border-slate-700">
@@ -56,7 +56,6 @@ export const TasksListView: React.FC<TasksListViewProps> = ({ userTasks, viewing
                             <div>Day</div>
                             <div>Task Description</div>
                             <div className="text-center">Status</div>
-                            {isTimeTrackingEnabled && <div className="text-center">Time</div>}
                         </div>
                         {filteredTasks.map(task => <FilteredTaskItem key={task.id} task={task} />)}
                     </div>
